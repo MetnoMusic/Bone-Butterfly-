@@ -1,667 +1,651 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bone Butterfly</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root { --cream:#f0e8d8; --warm:#c8a97a; --dark:#1a1410; }
+  body {
+    background:var(--dark); color:var(--cream);
+    font-family:'IM Fell English',serif;
+    height:100dvh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    overflow:hidden; user-select:none;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    opacity:0.35; pointer-events:none; z-index:10;
+  }
+  body::after {
+    content:''; position:fixed; inset:0;
+    background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.78) 100%);
+    pointer-events:none; z-index:9;
+  }
+  canvas { position:fixed; inset:0; width:100%; height:100%; z-index:1; }
+  .center {
+    position:relative; z-index:20; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:1.8rem;
+  }
+  .title { font-size:clamp(2.2rem,8vw,4.8rem); letter-spacing:0.18em; opacity:0.92; font-weight:normal; }
+  .subtitle { font-size:clamp(0.72rem,3vw,0.95rem); letter-spacing:0.45em; color:var(--warm); opacity:0.6; font-style:italic; text-transform:uppercase; }
+  .btn {
+    width:80px; height:80px; border-radius:50%;
+    border:1.5px solid rgba(200,169,122,0.4); background:transparent;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:border-color 0.8s,transform 0.3s; position:relative;
+  }
+  .btn::before { content:''; position:absolute; inset:-8px; border-radius:50%; border:1px solid rgba(200,169,122,0.12); }
+  .btn:hover { border-color:rgba(200,169,122,0.7); transform:scale(1.05); }
+  .note-indicator { font-size:clamp(0.9rem,3.5vw,1.2rem); letter-spacing:0.4em; color:var(--warm); opacity:0; transition:opacity 1.4s ease; min-height:1.8em; font-style:italic; }
+  .note-indicator.visible { opacity:0.45; }
+  .hint { font-size:0.68rem; letter-spacing:0.3em; color:var(--cream); opacity:0.22; text-transform:uppercase; transition:opacity 2s; }
+</style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1">&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1">&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
-<p class="p1">&lt;title&gt;Bone Butterfly&lt;/title&gt;</p>
-<p class="p1">&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&amp;display=swap');</p>
-<p class="p1"><span class="Apple-converted-space">  </span>* { margin:0; padding:0; box-sizing:border-box; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>:root { --cream:#f0e8d8; --warm:#c8a97a; --dark:#1a1410; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>body {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background:var(--dark); color:var(--cream);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>font-family:'IM Fell English',serif;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>height:100dvh; display:flex; flex-direction:column;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>align-items:center; justify-content:center;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>overflow:hidden; user-select:none;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>body::before {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>content:''; position:fixed; inset:0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>opacity:0.35; pointer-events:none; z-index:10;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>body::after {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>content:''; position:fixed; inset:0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.78) 100%);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>pointer-events:none; z-index:9;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>canvas { position:fixed; inset:0; width:100%; height:100%; z-index:1; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.center {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>position:relative; z-index:20; text-align:center;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>display:flex; flex-direction:column; align-items:center; gap:1.8rem;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.title { font-size:clamp(2.2rem,8vw,4.8rem); letter-spacing:0.18em; opacity:0.92; font-weight:normal; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.subtitle { font-size:clamp(0.72rem,3vw,0.95rem); letter-spacing:0.45em; color:var(--warm); opacity:0.6; font-style:italic; text-transform:uppercase; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.btn {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>width:80px; height:80px; border-radius:50%;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>border:1.5px solid rgba(200,169,122,0.4); background:transparent;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>display:flex; align-items:center; justify-content:center;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>cursor:pointer; transition:border-color 0.8s,transform 0.3s; position:relative;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.btn::before { content:''; position:absolute; inset:-8px; border-radius:50%; border:1px solid rgba(200,169,122,0.12); }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.btn:hover { border-color:rgba(200,169,122,0.7); transform:scale(1.05); }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.note-indicator { font-size:clamp(0.9rem,3.5vw,1.2rem); letter-spacing:0.4em; color:var(--warm); opacity:0; transition:opacity 1.4s ease; min-height:1.8em; font-style:italic; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.note-indicator.visible { opacity:0.45; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.hint { font-size:0.68rem; letter-spacing:0.3em; color:var(--cream); opacity:0.22; text-transform:uppercase; transition:opacity 2s; }</p>
-<p class="p1">&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1">&lt;canvas id="c"&gt;&lt;/canvas&gt;</p>
-<p class="p1">&lt;div class="center"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;p class="subtitle"&gt;a piece for many listeners&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1 class="title"&gt;Bone Butterfly&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;button class="btn" id="playBtn" aria-label="Play"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"&gt;&lt;polygon points="5,3 19,12 5,21"/&gt;&lt;/svg&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="note-indicator" id="noteDisp"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;p class="hint" id="hint"&gt;tap to begin&lt;/p&gt;</p>
-<p class="p1">&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;script&gt;</p>
-<p class="p1">const rand = (a,b) =&gt; a + Math.random()*(b-a);</p>
-<p class="p1">const pick = arr =&gt; arr[Math.floor(Math.random()*arr.length)];</p>
-<p class="p1">const coin = p =&gt; Math.random() &lt; p;</p>
-<p class="p2"><br></p>
-<p class="p1">// ── G Mixolydian universe ─────────────────────────────────────────────────────</p>
-<p class="p1">// G A B C D E F — F natural is the Mixolydian colour note</p>
-<p class="p1">const MIX = {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>G2:98.00, C3:130.81, D3:146.83, E3:164.81, F3:174.61,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>G3:196.00, A3:220.00, B3:246.94,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>C4:261.63, D4:293.66, E4:329.63, F4:349.23,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>G4:392.00, A4:440.00, B4:493.88,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>C5:523.25, D5:587.33, E5:659.26, F5:698.46,</p>
-<p class="p1"><span class="Apple-converted-space">  </span>G5:784.00, A5:880.00,</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">// Melody notes — expanded to 6 pitches, D and A less frequent than core 4</p>
-<p class="p1">const MELODY = ['G4','F4','E4','C4','D4','A4'];</p>
-<p class="p1">const CORE <span class="Apple-converted-space">  </span>= ['G4','F4','E4','C4']; <span class="Apple-converted-space">  </span>// original four — appear more often</p>
-<p class="p1">const COLOUR = ['D4','A4']; <span class="Apple-converted-space">            </span>// new additions — appear less often</p>
-<p class="p2"><br></p>
-<p class="p1">// Voice leading transition weights</p>
-<p class="p1">// Format: { targetNote: weight } — higher = more likely</p>
-<p class="p1">// Rules:</p>
-<p class="p1">// <span class="Apple-converted-space">  </span>G → A<span class="Apple-converted-space">  </span>: strongly preferred</p>
-<p class="p1">// <span class="Apple-converted-space">  </span>D → E<span class="Apple-converted-space">  </span>: strongly preferred</p>
-<p class="p1">// <span class="Apple-converted-space">  </span>E → D<span class="Apple-converted-space">  </span>: forbidden (weight 0)</p>
-<p class="p1">// <span class="Apple-converted-space">  </span>A → G<span class="Apple-converted-space">  </span>: forbidden (weight 0)</p>
-<p class="p1">const TRANSITIONS = {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>G4: { A4:5, F4:2, E4:2, C4:2, D4:1 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>F4: { E4:3, C4:3, G4:2, D4:2, A4:1 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>E4: { C4:3, G4:3, F4:2, A4:2, D4:0 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>C4: { G4:3, E4:3, F4:2, D4:2, A4:1 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>D4: { E4:6, G4:2, F4:1, C4:1, A4:1 },</p>
-<p class="p1"><span class="Apple-converted-space">  </span>A4: { E4:3, F4:3, C4:2, D4:2, G4:0 },</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">// Chord voicings — expanded with D and A</p>
-<p class="p1">const VOICINGS = {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>G4: ['G2','D3','G3','B3','D4','G4','B4','D5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>F4: ['C3','F3','A3','C4','F4','A4','C5','E5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>E4: ['G2','E3','B3','E4','G4','B4','E5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>C4: ['G2','C3','G3','C4','E4','G4','C5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>D4: ['D3','A3','D4','F4','A4','D5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>A4: ['A2','E3','A3','C4','E4','A4','C5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>GF: ['G2','F3','C4','F4','A4','C5','F5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>GE: ['G2','E3','B3','G4','B4','E5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>GC: ['G2','C3','G3','C4','E4','G4','D5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FE: ['C3','E3','A3','C4','F4','A4','C5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>FC: ['F3','C4','F4','A4','C5','F5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>EC: ['C3','E3','G3','C4','E4','G4','B4'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>DA: ['D3','A3','D4','E4','A4','D5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>GA: ['G2','A3','E4','G4','A4','E5'],</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ALL:['G2','A2','C3','E3','G3','B3','D4','F4','G4','A4','C5'],</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">let ctx, reverb, masterLPF, playing=false, lastNote=null;</p>
-<p class="p1">let timers=[];</p>
-<p class="p1">const addTimer=(fn,ms)=&gt;{const t=setTimeout(fn,ms);timers.push(t);return t;};</p>
-<p class="p1">const clearTimers=()=&gt;{timers.forEach(clearTimeout);timers=[];};</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Piece memory ──────────────────────────────────────────────────────────────</p>
-<p class="p1">let recentNotes = [];<span class="Apple-converted-space">    </span>// last 6 melody notes played</p>
-<p class="p1">let noteHistory = [];<span class="Apple-converted-space">    </span>// full sequence history</p>
-<p class="p1">let breathPhase = 'building'; // building | full | withdrawing | silence</p>
-<p class="p1">let pieceDensity = 1.0;<span class="Apple-converted-space">  </span>// multiplier on gap timing</p>
-<p class="p1">let swellActive=false, swellIntensity=0;</p>
-<p class="p1">let nextNoteT=0;</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Reverb (synthesised impulse response) ─────────────────────────────────────</p>
-<p class="p1">function buildReverb(actx) {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sr=actx.sampleRate, dur=5.0, decay=4.0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const len=Math.floor(sr*dur);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const ir=actx.createBuffer(2,len,sr);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for (let ch=0;ch&lt;2;ch++) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const d=ir.getChannelData(ch);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for (let i=0;i&lt;len;i++) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const w=Math.random()*2-1;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>d[i]=(b0+b1+b2+b3+b4+b5+w*0.5362)*0.11*Math.pow(1-i/len,decay);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const conv=actx.createConvolver(); conv.buffer=ir; return conv;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Pink noise ────────────────────────────────────────────────────────────────</p>
-<p class="p1">function makePink(actx,dur) {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sr=actx.sampleRate;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const buf=actx.createBuffer(2,Math.floor(sr*dur),sr);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for (let ch=0;ch&lt;2;ch++) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const d=buf.getChannelData(ch);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for (let i=0;i&lt;d.length;i++) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const w=Math.random()*2-1;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11; b6=w*0.115926;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return buf;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Tape curve ────────────────────────────────────────────────────────────────</p>
-<p class="p1">function tapeCurve(amt=35) {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const n=256,c=new Float32Array(n);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for (let i=0;i&lt;n;i++){const x=i*2/n-1;c[i]=(Math.PI+amt)*x/(Math.PI+amt*Math.abs(x));}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return c;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Piano note ────────────────────────────────────────────────────────────────</p>
-<p class="p1">function playNote(actx, freqHz, time, opts={}) {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>vol=rand(0.10,0.16), decay=rand(4.0,7.0),</p>
-<p class="p1"><span class="Apple-converted-space">    </span>reversed=false, quiet=false, dryWet=0.62,</p>
-<p class="p1"><span class="Apple-converted-space">    </span>wobble=rand(0.997,1.003)</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} = opts;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const f0=freqHz*wobble;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const v=quiet?vol*0.4:vol;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const dryG=actx.createGain(); dryG.gain.value=v*(1-dryWet);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const wetG=actx.createGain(); wetG.gain.value=v*dryWet;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>dryG.connect(masterLPF); wetG.connect(reverb);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const preLPF=actx.createBiquadFilter(); preLPF.type='lowpass';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>preLPF.frequency.value=rand(1800,2600); preLPF.Q.value=0.5;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>preLPF.connect(dryG); preLPF.connect(wetG);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const warmth=actx.createBiquadFilter(); warmth.type='highshelf';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>warmth.frequency.value=4000; warmth.gain.value=rand(-5,-9);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>warmth.connect(preLPF);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const shaper=actx.createWaveShaper();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>shaper.curve=tapeCurve(rand(20,45)); shaper.oversample='4x';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>shaper.connect(warmth);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const env=actx.createGain();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (reversed) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>env.gain.setValueAtTime(0.001,time);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>env.gain.exponentialRampToValueAtTime(1.0,time+decay*0.82);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>env.gain.linearRampToValueAtTime(0,time+decay);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>env.gain.setValueAtTime(0,time);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>env.gain.linearRampToValueAtTime(1.0,time+0.010);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>env.gain.exponentialRampToValueAtTime(0.38,time+0.15);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>env.gain.exponentialRampToValueAtTime(0.001,time+decay);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>env.connect(shaper);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Inharmonic partials — acoustic piano character</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const ih=1.0006;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>[</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{m:1.000,<span class="Apple-converted-space">      </span>g:1.00,d:1.00},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{m:2.000*ih, <span class="Apple-converted-space">  </span>g:0.48,d:0.55},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{m:3.000*ih*ih,g:0.22,d:0.35},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{m:4*Math.pow(ih,3),g:0.12,d:0.22},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{m:5*Math.pow(ih,4),g:0.06,d:0.15},</p>
-<p class="p1"><span class="Apple-converted-space">    </span>{m:6*Math.pow(ih,5),g:0.03,d:0.10},</p>
-<p class="p1"><span class="Apple-converted-space">  </span>].forEach(p=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const osc=actx.createOscillator(); osc.type='sine'; osc.frequency.value=f0*p.m;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(p.m&lt;1.1){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const wow=actx.createOscillator(); wow.frequency.value=rand(0.3,0.8);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const wg=actx.createGain(); wg.gain.value=rand(0.5,1.5);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>wow.connect(wg); wg.connect(osc.frequency);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>wow.start(time); wow.stop(time+decay+2);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const pg=actx.createGain();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>pg.gain.setValueAtTime(p.g,time);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>pg.gain.exponentialRampToValueAtTime(0.001,time+decay*p.d);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>osc.connect(pg); pg.connect(env);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>osc.start(time); osc.stop(time+decay+2);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Hammer transient</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (!reversed) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hLen=Math.floor(actx.sampleRate*0.035);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hb=actx.createBuffer(1,hLen,actx.sampleRate);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hd=hb.getChannelData(0);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for(let i=0;i&lt;hLen;i++) hd[i]=(Math.random()*2-1)*Math.exp(-i/350)*0.6;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hs=actx.createBufferSource(); hs.buffer=hb;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hbp=actx.createBiquadFilter(); hbp.type='bandpass';</p>
-<p class="p1"><span class="Apple-converted-space">    </span>hbp.frequency.value=rand(600,1100); hbp.Q.value=2;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hg=actx.createGain(); hg.gain.value=rand(0.08,0.15);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>hs.connect(hbp); hbp.connect(hg); hg.connect(wetG);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>hs.start(time); hs.stop(time+0.04);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Self-referencing chord bloom ──────────────────────────────────────────────</p>
-<p class="p1">// Looks at recentNotes, picks the best voicing, fades in a lush chord</p>
-<p class="p1">function bloomChord(actx) {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (!playing || !ctx) return;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Analyse what was recently played</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const unique = [...new Set(recentNotes.slice(-6))];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let voicingKey = 'G4';</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (unique.length &gt;= 5) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = 'ALL';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.length &gt;= 4 &amp;&amp; unique.includes('G4') &amp;&amp; unique.includes('A4')) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = 'ALL';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.includes('D4') &amp;&amp; unique.includes('A4')) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = 'DA';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.includes('G4') &amp;&amp; unique.includes('A4')) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = 'GA';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.includes('D4')) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = 'D4';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.includes('A4')) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = 'A4';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.length &gt;= 4) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = 'ALL';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.length === 3) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = unique.includes('G4') &amp;&amp; unique.includes('F4') ? 'GF'</p>
-<p class="p1"><span class="Apple-converted-space">               </span>: unique.includes('G4') &amp;&amp; unique.includes('E4') ? 'GE'</p>
-<p class="p1"><span class="Apple-converted-space">               </span>: unique.includes('G4') &amp;&amp; unique.includes('C4') ? 'GC'</p>
-<p class="p1"><span class="Apple-converted-space">               </span>: unique.includes('F4') &amp;&amp; unique.includes('E4') ? 'FE'</p>
-<p class="p1"><span class="Apple-converted-space">               </span>: unique.includes('F4') &amp;&amp; unique.includes('C4') ? 'FC'</p>
-<p class="p1"><span class="Apple-converted-space">               </span>: 'EC';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.length === 2) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if<span class="Apple-converted-space">      </span>(unique.includes('G4') &amp;&amp; unique.includes('F4')) voicingKey='GF';</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else if (unique.includes('G4') &amp;&amp; unique.includes('E4')) voicingKey='GE';</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else if (unique.includes('G4') &amp;&amp; unique.includes('C4')) voicingKey='GC';</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else if (unique.includes('F4') &amp;&amp; unique.includes('E4')) voicingKey='FE';</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else if (unique.includes('F4') &amp;&amp; unique.includes('C4')) voicingKey='FC';</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else if (unique.includes('D4') &amp;&amp; unique.includes('A4')) voicingKey='DA';</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else if (unique.includes('G4') &amp;&amp; unique.includes('A4')) voicingKey='GA';</p>
-<p class="p1"><span class="Apple-converted-space">    </span>else voicingKey='EC';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else if (unique.length === 1) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>voicingKey = unique[0];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const notes = VOICINGS[voicingKey] || VOICINGS['G4'];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const chordDur = rand(8, 16); <span class="Apple-converted-space">  </span>// chord sustains for a long time</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const fadeIn <span class="Apple-converted-space">  </span>= rand(2.5, 5);<span class="Apple-converted-space">  </span>// very slow fade in</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const now = actx.currentTime;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Master chord gain — slow fade in and out</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const chordMaster = actx.createGain();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordMaster.gain.setValueAtTime(0, now);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordMaster.gain.linearRampToValueAtTime(rand(0.06,0.12), now+fadeIn);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordMaster.gain.setValueAtTime(rand(0.06,0.12), now+chordDur*0.6);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordMaster.gain.linearRampToValueAtTime(0, now+chordDur);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Chord goes heavily into reverb for lushness</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const chordWet = actx.createGain(); chordWet.gain.value=0.85;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const chordDry = actx.createGain(); chordDry.gain.value=0.15;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordMaster.connect(chordWet); chordWet.connect(reverb);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordMaster.connect(chordDry); chordDry.connect(masterLPF);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Very gentle LPF on chord — silky</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const chordLPF = actx.createBiquadFilter();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordLPF.type='lowpass'; chordLPF.frequency.value=rand(900,1400); chordLPF.Q.value=0.3;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordLPF.connect(chordMaster);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Play each note of the chord as a sustained sine with harmonics</p>
-<p class="p1"><span class="Apple-converted-space">  </span>notes.forEach((noteName, i) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const f = MIX[noteName];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if (!f) return;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// Stagger entry slightly so chord blooms from bottom to top</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const stagger = i * rand(0.15, 0.4);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const osc1=actx.createOscillator(); osc1.type='sine'; osc1.frequency.value=f*rand(0.998,1.002);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const osc2=actx.createOscillator(); osc2.type='sine'; osc2.frequency.value=f*2.001;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const osc3=actx.createOscillator(); osc3.type='sine'; osc3.frequency.value=f*3.002;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const og=actx.createGain();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>og.gain.setValueAtTime(0, now+stagger);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>og.gain.linearRampToValueAtTime(1.0/(notes.length*0.7), now+stagger+rand(1,2.5));</p>
-<p class="p1"><span class="Apple-converted-space">    </span>og.gain.setValueAtTime(1.0/(notes.length*0.7), now+chordDur*0.55);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>og.gain.linearRampToValueAtTime(0, now+chordDur-stagger);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const h2g=actx.createGain(); h2g.gain.value=0.18;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const h3g=actx.createGain(); h3g.gain.value=0.07;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>osc1.connect(og); og.connect(chordLPF);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>osc2.connect(h2g); h2g.connect(chordLPF);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>osc3.connect(h3g); h3g.connect(chordLPF);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const end=now+chordDur+2;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>[osc1,osc2,osc3].forEach(o=&gt;{o.start(now+stagger);o.stop(end);});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Trigger visual bloom</p>
-<p class="p1"><span class="Apple-converted-space">  </span>chordBloom=true;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>setTimeout(()=&gt;{ chordBloom=false; }, chordDur*1000*0.7);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Ocean swell ───────────────────────────────────────────────────────────────</p>
-<p class="p1">function playOceanSwell(actx) {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const dur=rand(16,28);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const buf=makePink(actx,dur);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const src=actx.createBufferSource(); src.buffer=buf;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const peak=rand(0.13,0.20);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const env=actx.createGain();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>env.gain.setValueAtTime(0,actx.currentTime);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>env.gain.linearRampToValueAtTime(peak,actx.currentTime+dur*0.30);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>env.gain.setValueAtTime(peak,actx.currentTime+dur*0.62);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>env.gain.linearRampToValueAtTime(0,actx.currentTime+dur);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const lpf=actx.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=rand(350,550); lpf.Q.value=0.7;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const body=actx.createBiquadFilter(); body.type='peaking'; body.frequency.value=rand(80,150); body.Q.value=0.5; body.gain.value=rand(4,8);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const lfo=actx.createOscillator(); lfo.frequency.value=rand(0.03,0.09);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const lfg=actx.createGain(); lfg.gain.value=rand(0.015,0.04);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>lfo.connect(lfg); lfg.connect(env.gain);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sd=actx.createGain(); sd.gain.value=0.55;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const sw=actx.createGain(); sw.gain.value=0.5;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>src.connect(body); body.connect(lpf); lpf.connect(env);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>env.connect(sd); sd.connect(masterLPF);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>env.connect(sw); sw.connect(reverb);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>lfo.start(); lfo.stop(actx.currentTime+dur);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>src.start(); src.stop(actx.currentTime+dur);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>swellActive=true; swellIntensity=peak/0.20;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>setTimeout(()=&gt;{swellActive=false;swellIntensity=0;},dur*1000);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Polyrhythm layer ──────────────────────────────────────────────────────────</p>
-<p class="p1">function playPolyLayer(actx, ratio, pulseLen, startT) {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const step=(pulseLen*4)/ratio;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(let i=0;i&lt;ratio;i++){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const name=pick(MELODY); const f=MIX[name];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>playNote(actx,f,startT+i*step,{vol:rand(0.04,0.07),decay:rand(1.8,3.0),quiet:true,dryWet:0.72});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Breathing / density arc ───────────────────────────────────────────────────</p>
-<p class="p1">// The piece breathes: builds density, sits full, then withdraws, rests, rebuilds</p>
-<p class="p1">function updateBreathPhase() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const phases = ['building','full','withdrawing','silence'];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const durations = {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>building:<span class="Apple-converted-space">  </span>rand(45000,90000),</p>
-<p class="p1"><span class="Apple-converted-space">    </span>full:<span class="Apple-converted-space">      </span>rand(30000,60000),</p>
-<p class="p1"><span class="Apple-converted-space">    </span>withdrawing: rand(40000,70000),</p>
-<p class="p1"><span class="Apple-converted-space">    </span>silence: <span class="Apple-converted-space">  </span>rand(15000,35000),</p>
-<p class="p1"><span class="Apple-converted-space">  </span>};</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const densities = { building:1.0, full:0.85, withdrawing:1.4, silence:2.8 };</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const next = (current) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const idx = phases.indexOf(current);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return phases[(idx+1)%phases.length];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const transition = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if (!playing) return;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>breathPhase = next(breathPhase);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>pieceDensity = densities[breathPhase];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>addTimer(transition, durations[breathPhase]);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>addTimer(transition, durations[breathPhase]);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Note picker — weighted transitions + voice leading rules ──────────────────</p>
-<p class="p1">function pickMelodyNote() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>let pool = [];</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (lastNote &amp;&amp; TRANSITIONS[lastNote]) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// Build pool from transition weights</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const t = TRANSITIONS[lastNote];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for (const [note, weight] of Object.entries(t)) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>for (let i=0; i&lt;weight; i++) pool.push(note);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// No last note yet — weight core notes more heavily than colour notes</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for (const n of CORE) <span class="Apple-converted-space">  </span>{ pool.push(n,n,n); } <span class="Apple-converted-space">  </span>// 3x weight</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for (const n of COLOUR) { pool.push(n); } <span class="Apple-converted-space">        </span>// 1x weight</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Memory drift — after 20+ notes, occasionally echo a ghost note from history</p>
-<p class="p1"><span class="Apple-converted-space">  </span>// (only if that ghost note is a legal move from current position)</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (noteHistory.length &gt; 16 &amp;&amp; coin(0.22) &amp;&amp; lastNote) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const lookback = Math.floor(rand(4,9));</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const ghost = noteHistory[noteHistory.length - lookback];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const allowed = TRANSITIONS[lastNote] || {};</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if (ghost &amp;&amp; (allowed[ghost] || 0) &gt; 0) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>pool.push(ghost, ghost); // extra pull toward the ghost</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Remove any notes with weight 0 (forbidden moves) — already excluded</p>
-<p class="p1"><span class="Apple-converted-space">  </span>// but safety: filter out same note if pool has other options</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const filtered = pool.filter(n =&gt; n !== lastNote);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const chosen = filtered.length &gt; 0 ? pick(filtered) : pick(pool);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>lastNote = chosen;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>noteHistory.push(chosen);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>recentNotes.push(chosen);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (recentNotes.length &gt; 8) recentNotes.shift();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (noteHistory.length &gt; 200) noteHistory.shift();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>return chosen;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Main melody scheduler ─────────────────────────────────────────────────────</p>
-<p class="p1">const noteDisp=document.getElementById('noteDisp');</p>
-<p class="p2"><br></p>
-<p class="p1">function scheduleMain() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if (!playing||!ctx) return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const name = pickMelodyNote();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const f = MIX[name];</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const isRev = coin(0.12);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Gap modulated by breath phase density</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const baseGap = rand(2.8,6.2);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const gap = baseGap * pieceDensity;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>nextNoteT += gap;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>playNote(ctx, f, nextNoteT, { reversed:isRev, dryWet:0.62 });</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>const ms = Math.max(0,(nextNoteT-ctx.currentTime)*1000);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>addTimer(()=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(!playing) return;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>noteDisp.textContent = isRev ? `↩ ${name.replace(/\d/,'')}` : name.replace(/\d/,'');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>noteDisp.classList.add('visible');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>addTimer(()=&gt;noteDisp.classList.remove('visible'),2200);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>triggerPulse(isRev);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>},ms);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>addTimer(scheduleMain,(gap-1.4)*1000);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Chord bloom scheduler ─────────────────────────────────────────────────────</p>
-<p class="p1">function scheduleChordBloom() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!playing||!ctx) return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>const wait = rand(8000,18000); // every 8-18 seconds</p>
-<p class="p1"><span class="Apple-converted-space">  </span>addTimer(()=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(!playing||!ctx) return;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(recentNotes.length &gt;= 2) bloomChord(ctx);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>scheduleChordBloom();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}, wait);</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Polyrhythm scheduler ──────────────────────────────────────────────────────</p>
-<p class="p1">function schedulePolyrhythm() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!playing||!ctx) return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>addTimer(()=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(!playing||!ctx) return;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(breathPhase !== 'silence') {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const ratio=coin(0.5)?5:6, pulse=rand(1.0,1.7);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const t0=ctx.currentTime+0.5;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>playPolyLayer(ctx,ratio,pulse,t0);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>playPolyLayer(ctx,ratio,pulse,t0+pulse*4+rand(0.5,1.5));</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>schedulePolyrhythm();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}, rand(20000,45000));</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Ocean swell scheduler ─────────────────────────────────────────────────────</p>
-<p class="p1">function scheduleOceanSwell() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(!playing||!ctx) return;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>addTimer(()=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(!playing||!ctx) return;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(!swellActive) playOceanSwell(ctx);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>scheduleOceanSwell();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}, rand(18000,40000));</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Start / stop ──────────────────────────────────────────────────────────────</p>
-<p class="p1">function startMusic() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>ctx = new (window.AudioContext||window.webkitAudioContext)();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>reverb = buildReverb(ctx);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>masterLPF = ctx.createBiquadFilter();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>masterLPF.type='lowpass'; masterLPF.frequency.value=5500; masterLPF.Q.value=0.4;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Slowly breathe the master filter</p>
-<p class="p1"><span class="Apple-converted-space">  </span>masterLPF.frequency.setValueAtTime(5500,ctx.currentTime);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>masterLPF.frequency.linearRampToValueAtTime(3800,ctx.currentTime+90);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>masterLPF.frequency.linearRampToValueAtTime(5000,ctx.currentTime+180);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>masterLPF.connect(ctx.destination);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>reverb.connect(ctx.destination);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>nextNoteT = ctx.currentTime+0.8;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>breathPhase='building'; pieceDensity=1.0;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>scheduleMain();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>scheduleChordBloom();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>schedulePolyrhythm();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>updateBreathPhase();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>addTimer(()=&gt;{ if(playing&amp;&amp;ctx) playOceanSwell(ctx); }, rand(6000,14000));</p>
-<p class="p1"><span class="Apple-converted-space">  </span>scheduleOceanSwell();</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">function stopMusic() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>clearTimers();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(ctx){ctx.close();ctx=null;}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>recentNotes=[]; noteHistory=[]; lastNote=null;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>noteDisp.textContent=''; noteDisp.classList.remove('visible');</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">const btn=document.getElementById('playBtn');</p>
-<p class="p1">btn.addEventListener('click',()=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">  </span>playing=!playing;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(playing){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>startMusic();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>document.getElementById('btnIcon').outerHTML=`&lt;svg id="btnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a97a" stroke-width="2.2"&gt;&lt;rect x="6" y="4" width="4" height="16"/&gt;&lt;rect x="14" y="4" width="4" height="16"/&gt;&lt;/svg&gt;`;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>document.getElementById('hint').style.opacity='0';</p>
-<p class="p1"><span class="Apple-converted-space">  </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>stopMusic();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>document.getElementById('btnIcon').outerHTML=`&lt;svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"&gt;&lt;polygon points="5,3 19,12 5,21"/&gt;&lt;/svg&gt;`;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">});</p>
-<p class="p2"><br></p>
-<p class="p1">// ── Canvas ────────────────────────────────────────────────────────────────────</p>
-<p class="p1">const canvas=document.getElementById('c'), g=canvas.getContext('2d');</p>
-<p class="p1">let W,H;</p>
-<p class="p1">const resize=()=&gt;{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;};</p>
-<p class="p1">resize(); window.addEventListener('resize',resize);</p>
-<p class="p2"><br></p>
-<p class="p1">const particles=Array.from({length:70},()=&gt;({</p>
-<p class="p1"><span class="Apple-converted-space">  </span>x:Math.random(),y:Math.random(),size:rand(0.4,2.2),</p>
-<p class="p1"><span class="Apple-converted-space">  </span>speed:rand(0.00006,0.00022),angle:rand(0,Math.PI*2),</p>
-<p class="p1"><span class="Apple-converted-space">  </span>opacity:rand(0.03,0.11),drift:rand(-0.0002,0.0002)</p>
-<p class="p1">}));</p>
-<p class="p1">const threads=Array.from({length:10},()=&gt;({</p>
-<p class="p1"><span class="Apple-converted-space">  </span>x:Math.random(),y:rand(0.1,0.9),len:rand(0.06,0.20),</p>
-<p class="p1"><span class="Apple-converted-space">  </span>speed:rand(0.00003,0.00008),opacity:rand(0.02,0.055),angle:rand(-0.12,0.12)</p>
-<p class="p1">}));</p>
-<p class="p2"><br></p>
-<p class="p1">let pulses=[], chordBloom=false;</p>
-<p class="p1">function triggerPulse(rev=false){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>pulses.push({r:0,maxR:rand(90,200),opacity:rand(0.10,0.20),speed:rand(0.3,0.7),rev});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(coin(0.3)) pulses.push({r:0,maxR:rand(30,80),opacity:rand(0.06,0.12),speed:rand(0.6,1.2),rev:false});</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// Chord bloom triggers large slow expanding ring</p>
-<p class="p1">function triggerChordVisual(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(let i=0;i&lt;4;i++){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>setTimeout(()=&gt;{</p>
-<p class="p1"><span class="Apple-converted-space">      </span>pulses.push({r:i*15,maxR:rand(200,350),opacity:rand(0.05,0.12),speed:rand(0.15,0.35),rev:false,chord:true});</p>
-<p class="p1"><span class="Apple-converted-space">    </span>},i*600);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">let swellAlpha=0,swellTarget=0;</p>
-<p class="p1">setInterval(()=&gt;{ swellTarget=swellActive?rand(0.03,0.07)*swellIntensity:0; },1500);</p>
-<p class="p2"><br></p>
-<p class="p1">// Watch for chord blooms to trigger visuals</p>
-<p class="p1">let lastChordBloom=false;</p>
-<p class="p1">let frame=0;</p>
-<p class="p1">function draw(){</p>
-<p class="p1"><span class="Apple-converted-space">  </span>requestAnimationFrame(draw); frame++;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(chordBloom&amp;&amp;!lastChordBloom) triggerChordVisual();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>lastChordBloom=chordBloom;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>swellAlpha+=(swellTarget-swellAlpha)*0.003;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>g.fillStyle='rgba(26,20,16,0.15)'; g.fillRect(0,0,W,H);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(swellAlpha&gt;0.003){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const gr=g.createRadialGradient(W/2,H*0.65,0,W/2,H/2,W*0.8);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>gr.addColorStop(0,`rgba(60,95,118,${swellAlpha*2.5})`);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>gr.addColorStop(0.5,`rgba(40,70,90,${swellAlpha})`);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>gr.addColorStop(1,'transparent');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.fillStyle=gr; g.fillRect(0,0,W,H);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>// Chord bloom ambient glow</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(chordBloom){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const cg=g.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.55);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>cg.addColorStop(0,`rgba(180,155,100,0.04)`);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>cg.addColorStop(1,'transparent');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.fillStyle=cg; g.fillRect(0,0,W,H);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(const t of threads){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>t.x+=t.speed; if(t.x&gt;1.2)t.x=-0.2;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.beginPath(); g.moveTo(t.x*W,t.y*H); g.lineTo((t.x+t.len)*W,(t.y+t.angle)*H);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.strokeStyle=`rgba(200,169,122,${t.opacity})`; g.lineWidth=rand(0.2,0.7); g.stroke();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(const p of particles){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>p.angle+=p.drift; p.x+=Math.cos(p.angle)*p.speed; p.y+=Math.sin(p.angle)*p.speed*0.5;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(p.x&lt;-0.05)p.x=1.05; if(p.x&gt;1.05)p.x=-0.05;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(p.y&lt;-0.05)p.y=1.05; if(p.y&gt;1.05)p.y=-0.05;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.beginPath(); g.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.fillStyle=`rgba(200,169,122,${p.opacity})`; g.fill();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>if(frame%3===0){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.beginPath(); g.moveTo(rand(0,W*0.6),rand(0,H)); g.lineTo(rand(W*0.3,W),rand(0,H));</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.strokeStyle=`rgba(200,169,122,${rand(0.006,0.025)})`; g.lineWidth=rand(0.2,0.8); g.stroke();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>for(let i=pulses.length-1;i&gt;=0;i--){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const p=pulses[i]; p.r+=p.speed; p.opacity-=p.chord?0.0005:0.0014;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>if(p.opacity&lt;=0||p.r&gt;p.maxR){pulses.splice(i,1);continue;}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.beginPath(); g.arc(W/2,H/2,p.r*(W/320),0,Math.PI*2);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.strokeStyle=p.chord</p>
-<p class="p1"><span class="Apple-converted-space">      </span>? `rgba(210,185,130,${p.opacity})`</p>
-<p class="p1"><span class="Apple-converted-space">      </span>: p.rev?`rgba(138,180,200,${p.opacity})`:`rgba(200,169,122,${p.opacity})`;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.lineWidth=p.chord?1.5:1; g.stroke();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">}</p>
-<p class="p1">draw();</p>
-<p class="p1">&lt;/script&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+<canvas id="c"></canvas>
+<div class="center">
+  <p class="subtitle">a piece for many listeners</p>
+  <h1 class="title">Bone Butterfly</h1>
+  <button class="btn" id="playBtn" aria-label="Play">
+    <svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"><polygon points="5,3 19,12 5,21"/></svg>
+  </button>
+  <div class="note-indicator" id="noteDisp"></div>
+  <p class="hint" id="hint">tap to begin</p>
+</div>
+
+<script>
+const rand = (a,b) => a + Math.random()*(b-a);
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const coin = p => Math.random() < p;
+
+// ── G Mixolydian universe ─────────────────────────────────────────────────────
+// G A B C D E F — F natural is the Mixolydian colour note
+const MIX = {
+  G2:98.00, C3:130.81, D3:146.83, E3:164.81, F3:174.61,
+  G3:196.00, A3:220.00, B3:246.94,
+  C4:261.63, D4:293.66, E4:329.63, F4:349.23,
+  G4:392.00, A4:440.00, B4:493.88,
+  C5:523.25, D5:587.33, E5:659.26, F5:698.46,
+  G5:784.00, A5:880.00,
+};
+
+// Melody notes — expanded to 6 pitches, D and A less frequent than core 4
+const MELODY = ['G4','F4','E4','C4','D4','A4'];
+const CORE   = ['G4','F4','E4','C4'];   // original four — appear more often
+const COLOUR = ['D4','A4'];             // new additions — appear less often
+
+// Voice leading transition weights
+// Format: { targetNote: weight } — higher = more likely
+// Rules:
+//   G → A  : strongly preferred
+//   D → E  : strongly preferred
+//   E → D  : forbidden (weight 0)
+//   A → G  : forbidden (weight 0)
+const TRANSITIONS = {
+  G4: { A4:5, F4:2, E4:2, C4:2, D4:1 },
+  F4: { E4:3, C4:3, G4:2, D4:2, A4:1 },
+  E4: { C4:3, G4:3, F4:2, A4:2, D4:0 },
+  C4: { G4:3, E4:3, F4:2, D4:2, A4:1 },
+  D4: { E4:6, G4:2, F4:1, C4:1, A4:1 },
+  A4: { E4:3, F4:3, C4:2, D4:2, G4:0 },
+};
+
+// Chord voicings — expanded with D and A
+const VOICINGS = {
+  G4: ['G2','D3','G3','B3','D4','G4','B4','D5'],
+  F4: ['C3','F3','A3','C4','F4','A4','C5','E5'],
+  E4: ['G2','E3','B3','E4','G4','B4','E5'],
+  C4: ['G2','C3','G3','C4','E4','G4','C5'],
+  D4: ['D3','A3','D4','F4','A4','D5'],
+  A4: ['A2','E3','A3','C4','E4','A4','C5'],
+  GF: ['G2','F3','C4','F4','A4','C5','F5'],
+  GE: ['G2','E3','B3','G4','B4','E5'],
+  GC: ['G2','C3','G3','C4','E4','G4','D5'],
+  FE: ['C3','E3','A3','C4','F4','A4','C5'],
+  FC: ['F3','C4','F4','A4','C5','F5'],
+  EC: ['C3','E3','G3','C4','E4','G4','B4'],
+  DA: ['D3','A3','D4','E4','A4','D5'],
+  GA: ['G2','A3','E4','G4','A4','E5'],
+  ALL:['G2','A2','C3','E3','G3','B3','D4','F4','G4','A4','C5'],
+};
+
+let ctx, reverb, masterLPF, playing=false, lastNote=null;
+let timers=[];
+const addTimer=(fn,ms)=>{const t=setTimeout(fn,ms);timers.push(t);return t;};
+const clearTimers=()=>{timers.forEach(clearTimeout);timers=[];};
+
+// ── Piece memory ──────────────────────────────────────────────────────────────
+let recentNotes = [];    // last 6 melody notes played
+let noteHistory = [];    // full sequence history
+let breathPhase = 'building'; // building | full | withdrawing | silence
+let pieceDensity = 1.0;  // multiplier on gap timing
+let swellActive=false, swellIntensity=0;
+let nextNoteT=0;
+
+// ── Reverb (synthesised impulse response) ─────────────────────────────────────
+function buildReverb(actx) {
+  const sr=actx.sampleRate, dur=5.0, decay=4.0;
+  const len=Math.floor(sr*dur);
+  const ir=actx.createBuffer(2,len,sr);
+  for (let ch=0;ch<2;ch++) {
+    const d=ir.getChannelData(ch);
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0;
+    for (let i=0;i<len;i++) {
+      const w=Math.random()*2-1;
+      b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+      b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+      b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+      d[i]=(b0+b1+b2+b3+b4+b5+w*0.5362)*0.11*Math.pow(1-i/len,decay);
+    }
+  }
+  const conv=actx.createConvolver(); conv.buffer=ir; return conv;
+}
+
+// ── Pink noise ────────────────────────────────────────────────────────────────
+function makePink(actx,dur) {
+  const sr=actx.sampleRate;
+  const buf=actx.createBuffer(2,Math.floor(sr*dur),sr);
+  for (let ch=0;ch<2;ch++) {
+    const d=buf.getChannelData(ch);
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for (let i=0;i<d.length;i++) {
+      const w=Math.random()*2-1;
+      b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+      b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+      b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+      d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11; b6=w*0.115926;
+    }
+  }
+  return buf;
+}
+
+// ── Tape curve ────────────────────────────────────────────────────────────────
+function tapeCurve(amt=35) {
+  const n=256,c=new Float32Array(n);
+  for (let i=0;i<n;i++){const x=i*2/n-1;c[i]=(Math.PI+amt)*x/(Math.PI+amt*Math.abs(x));}
+  return c;
+}
+
+// ── Piano note ────────────────────────────────────────────────────────────────
+function playNote(actx, freqHz, time, opts={}) {
+  const {
+    vol=rand(0.10,0.16), decay=rand(4.0,7.0),
+    reversed=false, quiet=false, dryWet=0.62,
+    wobble=rand(0.997,1.003)
+  } = opts;
+
+  const f0=freqHz*wobble;
+  const v=quiet?vol*0.4:vol;
+
+  const dryG=actx.createGain(); dryG.gain.value=v*(1-dryWet);
+  const wetG=actx.createGain(); wetG.gain.value=v*dryWet;
+  dryG.connect(masterLPF); wetG.connect(reverb);
+
+  const preLPF=actx.createBiquadFilter(); preLPF.type='lowpass';
+  preLPF.frequency.value=rand(1800,2600); preLPF.Q.value=0.5;
+  preLPF.connect(dryG); preLPF.connect(wetG);
+
+  const warmth=actx.createBiquadFilter(); warmth.type='highshelf';
+  warmth.frequency.value=4000; warmth.gain.value=rand(-5,-9);
+  warmth.connect(preLPF);
+
+  const shaper=actx.createWaveShaper();
+  shaper.curve=tapeCurve(rand(20,45)); shaper.oversample='4x';
+  shaper.connect(warmth);
+
+  const env=actx.createGain();
+  if (reversed) {
+    env.gain.setValueAtTime(0.001,time);
+    env.gain.exponentialRampToValueAtTime(1.0,time+decay*0.82);
+    env.gain.linearRampToValueAtTime(0,time+decay);
+  } else {
+    env.gain.setValueAtTime(0,time);
+    env.gain.linearRampToValueAtTime(1.0,time+0.010);
+    env.gain.exponentialRampToValueAtTime(0.38,time+0.15);
+    env.gain.exponentialRampToValueAtTime(0.001,time+decay);
+  }
+  env.connect(shaper);
+
+  // Inharmonic partials — acoustic piano character
+  const ih=1.0006;
+  [
+    {m:1.000,      g:1.00,d:1.00},
+    {m:2.000*ih,   g:0.48,d:0.55},
+    {m:3.000*ih*ih,g:0.22,d:0.35},
+    {m:4*Math.pow(ih,3),g:0.12,d:0.22},
+    {m:5*Math.pow(ih,4),g:0.06,d:0.15},
+    {m:6*Math.pow(ih,5),g:0.03,d:0.10},
+  ].forEach(p=>{
+    const osc=actx.createOscillator(); osc.type='sine'; osc.frequency.value=f0*p.m;
+    if(p.m<1.1){
+      const wow=actx.createOscillator(); wow.frequency.value=rand(0.3,0.8);
+      const wg=actx.createGain(); wg.gain.value=rand(0.5,1.5);
+      wow.connect(wg); wg.connect(osc.frequency);
+      wow.start(time); wow.stop(time+decay+2);
+    }
+    const pg=actx.createGain();
+    pg.gain.setValueAtTime(p.g,time);
+    pg.gain.exponentialRampToValueAtTime(0.001,time+decay*p.d);
+    osc.connect(pg); pg.connect(env);
+    osc.start(time); osc.stop(time+decay+2);
+  });
+
+  // Hammer transient
+  if (!reversed) {
+    const hLen=Math.floor(actx.sampleRate*0.035);
+    const hb=actx.createBuffer(1,hLen,actx.sampleRate);
+    const hd=hb.getChannelData(0);
+    for(let i=0;i<hLen;i++) hd[i]=(Math.random()*2-1)*Math.exp(-i/350)*0.6;
+    const hs=actx.createBufferSource(); hs.buffer=hb;
+    const hbp=actx.createBiquadFilter(); hbp.type='bandpass';
+    hbp.frequency.value=rand(600,1100); hbp.Q.value=2;
+    const hg=actx.createGain(); hg.gain.value=rand(0.08,0.15);
+    hs.connect(hbp); hbp.connect(hg); hg.connect(wetG);
+    hs.start(time); hs.stop(time+0.04);
+  }
+}
+
+// ── Self-referencing chord bloom ──────────────────────────────────────────────
+// Looks at recentNotes, picks the best voicing, fades in a lush chord
+function bloomChord(actx) {
+  if (!playing || !ctx) return;
+
+  // Analyse what was recently played
+  const unique = [...new Set(recentNotes.slice(-6))];
+  let voicingKey = 'G4';
+
+  if (unique.length >= 5) {
+    voicingKey = 'ALL';
+  } else if (unique.length >= 4 && unique.includes('G4') && unique.includes('A4')) {
+    voicingKey = 'ALL';
+  } else if (unique.includes('D4') && unique.includes('A4')) {
+    voicingKey = 'DA';
+  } else if (unique.includes('G4') && unique.includes('A4')) {
+    voicingKey = 'GA';
+  } else if (unique.includes('D4')) {
+    voicingKey = 'D4';
+  } else if (unique.includes('A4')) {
+    voicingKey = 'A4';
+  } else if (unique.length >= 4) {
+    voicingKey = 'ALL';
+  } else if (unique.length === 3) {
+    voicingKey = unique.includes('G4') && unique.includes('F4') ? 'GF'
+               : unique.includes('G4') && unique.includes('E4') ? 'GE'
+               : unique.includes('G4') && unique.includes('C4') ? 'GC'
+               : unique.includes('F4') && unique.includes('E4') ? 'FE'
+               : unique.includes('F4') && unique.includes('C4') ? 'FC'
+               : 'EC';
+  } else if (unique.length === 2) {
+    if      (unique.includes('G4') && unique.includes('F4')) voicingKey='GF';
+    else if (unique.includes('G4') && unique.includes('E4')) voicingKey='GE';
+    else if (unique.includes('G4') && unique.includes('C4')) voicingKey='GC';
+    else if (unique.includes('F4') && unique.includes('E4')) voicingKey='FE';
+    else if (unique.includes('F4') && unique.includes('C4')) voicingKey='FC';
+    else if (unique.includes('D4') && unique.includes('A4')) voicingKey='DA';
+    else if (unique.includes('G4') && unique.includes('A4')) voicingKey='GA';
+    else voicingKey='EC';
+  } else if (unique.length === 1) {
+    voicingKey = unique[0];
+  }
+
+  const notes = VOICINGS[voicingKey] || VOICINGS['G4'];
+  const chordDur = rand(8, 16);   // chord sustains for a long time
+  const fadeIn   = rand(2.5, 5);  // very slow fade in
+  const now = actx.currentTime;
+
+  // Master chord gain — slow fade in and out
+  const chordMaster = actx.createGain();
+  chordMaster.gain.setValueAtTime(0, now);
+  chordMaster.gain.linearRampToValueAtTime(rand(0.06,0.12), now+fadeIn);
+  chordMaster.gain.setValueAtTime(rand(0.06,0.12), now+chordDur*0.6);
+  chordMaster.gain.linearRampToValueAtTime(0, now+chordDur);
+
+  // Chord goes heavily into reverb for lushness
+  const chordWet = actx.createGain(); chordWet.gain.value=0.85;
+  const chordDry = actx.createGain(); chordDry.gain.value=0.15;
+  chordMaster.connect(chordWet); chordWet.connect(reverb);
+  chordMaster.connect(chordDry); chordDry.connect(masterLPF);
+
+  // Very gentle LPF on chord — silky
+  const chordLPF = actx.createBiquadFilter();
+  chordLPF.type='lowpass'; chordLPF.frequency.value=rand(900,1400); chordLPF.Q.value=0.3;
+  chordLPF.connect(chordMaster);
+
+  // Play each note of the chord as a sustained sine with harmonics
+  notes.forEach((noteName, i) => {
+    const f = MIX[noteName];
+    if (!f) return;
+    // Stagger entry slightly so chord blooms from bottom to top
+    const stagger = i * rand(0.15, 0.4);
+    const osc1=actx.createOscillator(); osc1.type='sine'; osc1.frequency.value=f*rand(0.998,1.002);
+    const osc2=actx.createOscillator(); osc2.type='sine'; osc2.frequency.value=f*2.001;
+    const osc3=actx.createOscillator(); osc3.type='sine'; osc3.frequency.value=f*3.002;
+
+    const og=actx.createGain();
+    og.gain.setValueAtTime(0, now+stagger);
+    og.gain.linearRampToValueAtTime(1.0/(notes.length*0.7), now+stagger+rand(1,2.5));
+    og.gain.setValueAtTime(1.0/(notes.length*0.7), now+chordDur*0.55);
+    og.gain.linearRampToValueAtTime(0, now+chordDur-stagger);
+
+    const h2g=actx.createGain(); h2g.gain.value=0.18;
+    const h3g=actx.createGain(); h3g.gain.value=0.07;
+
+    osc1.connect(og); og.connect(chordLPF);
+    osc2.connect(h2g); h2g.connect(chordLPF);
+    osc3.connect(h3g); h3g.connect(chordLPF);
+
+    const end=now+chordDur+2;
+    [osc1,osc2,osc3].forEach(o=>{o.start(now+stagger);o.stop(end);});
+  });
+
+  // Trigger visual bloom
+  chordBloom=true;
+  setTimeout(()=>{ chordBloom=false; }, chordDur*1000*0.7);
+}
+
+// ── Ocean swell ───────────────────────────────────────────────────────────────
+function playOceanSwell(actx) {
+  const dur=rand(16,28);
+  const buf=makePink(actx,dur);
+  const src=actx.createBufferSource(); src.buffer=buf;
+  const peak=rand(0.13,0.20);
+  const env=actx.createGain();
+  env.gain.setValueAtTime(0,actx.currentTime);
+  env.gain.linearRampToValueAtTime(peak,actx.currentTime+dur*0.30);
+  env.gain.setValueAtTime(peak,actx.currentTime+dur*0.62);
+  env.gain.linearRampToValueAtTime(0,actx.currentTime+dur);
+  const lpf=actx.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=rand(350,550); lpf.Q.value=0.7;
+  const body=actx.createBiquadFilter(); body.type='peaking'; body.frequency.value=rand(80,150); body.Q.value=0.5; body.gain.value=rand(4,8);
+  const lfo=actx.createOscillator(); lfo.frequency.value=rand(0.03,0.09);
+  const lfg=actx.createGain(); lfg.gain.value=rand(0.015,0.04);
+  lfo.connect(lfg); lfg.connect(env.gain);
+  const sd=actx.createGain(); sd.gain.value=0.55;
+  const sw=actx.createGain(); sw.gain.value=0.5;
+  src.connect(body); body.connect(lpf); lpf.connect(env);
+  env.connect(sd); sd.connect(masterLPF);
+  env.connect(sw); sw.connect(reverb);
+  lfo.start(); lfo.stop(actx.currentTime+dur);
+  src.start(); src.stop(actx.currentTime+dur);
+  swellActive=true; swellIntensity=peak/0.20;
+  setTimeout(()=>{swellActive=false;swellIntensity=0;},dur*1000);
+}
+
+// ── Polyrhythm layer ──────────────────────────────────────────────────────────
+function playPolyLayer(actx, ratio, pulseLen, startT) {
+  const step=(pulseLen*4)/ratio;
+  for(let i=0;i<ratio;i++){
+    const name=pick(MELODY); const f=MIX[name];
+    playNote(actx,f,startT+i*step,{vol:rand(0.04,0.07),decay:rand(1.8,3.0),quiet:true,dryWet:0.72});
+  }
+}
+
+// ── Breathing / density arc ───────────────────────────────────────────────────
+// The piece breathes: builds density, sits full, then withdraws, rests, rebuilds
+function updateBreathPhase() {
+  const phases = ['building','full','withdrawing','silence'];
+  const durations = {
+    building:  rand(45000,90000),
+    full:      rand(30000,60000),
+    withdrawing: rand(40000,70000),
+    silence:   rand(15000,35000),
+  };
+  const densities = { building:1.0, full:0.85, withdrawing:1.4, silence:2.8 };
+
+  const next = (current) => {
+    const idx = phases.indexOf(current);
+    return phases[(idx+1)%phases.length];
+  };
+
+  const transition = () => {
+    if (!playing) return;
+    breathPhase = next(breathPhase);
+    pieceDensity = densities[breathPhase];
+    addTimer(transition, durations[breathPhase]);
+  };
+
+  addTimer(transition, durations[breathPhase]);
+}
+
+// ── Note picker — weighted transitions + voice leading rules ──────────────────
+function pickMelodyNote() {
+  let pool = [];
+
+  if (lastNote && TRANSITIONS[lastNote]) {
+    // Build pool from transition weights
+    const t = TRANSITIONS[lastNote];
+    for (const [note, weight] of Object.entries(t)) {
+      for (let i=0; i<weight; i++) pool.push(note);
+    }
+  } else {
+    // No last note yet — weight core notes more heavily than colour notes
+    for (const n of CORE)   { pool.push(n,n,n); }   // 3x weight
+    for (const n of COLOUR) { pool.push(n); }         // 1x weight
+  }
+
+  // Memory drift — after 20+ notes, occasionally echo a ghost note from history
+  // (only if that ghost note is a legal move from current position)
+  if (noteHistory.length > 16 && coin(0.22) && lastNote) {
+    const lookback = Math.floor(rand(4,9));
+    const ghost = noteHistory[noteHistory.length - lookback];
+    const allowed = TRANSITIONS[lastNote] || {};
+    if (ghost && (allowed[ghost] || 0) > 0) {
+      pool.push(ghost, ghost); // extra pull toward the ghost
+    }
+  }
+
+  // Remove any notes with weight 0 (forbidden moves) — already excluded
+  // but safety: filter out same note if pool has other options
+  const filtered = pool.filter(n => n !== lastNote);
+  const chosen = filtered.length > 0 ? pick(filtered) : pick(pool);
+
+  lastNote = chosen;
+  noteHistory.push(chosen);
+  recentNotes.push(chosen);
+  if (recentNotes.length > 8) recentNotes.shift();
+  if (noteHistory.length > 200) noteHistory.shift();
+  return chosen;
+}
+
+// ── Main melody scheduler ─────────────────────────────────────────────────────
+const noteDisp=document.getElementById('noteDisp');
+
+function scheduleMain() {
+  if (!playing||!ctx) return;
+  const name = pickMelodyNote();
+  const f = MIX[name];
+  const isRev = coin(0.12);
+  // Gap modulated by breath phase density
+  const baseGap = rand(2.8,6.2);
+  const gap = baseGap * pieceDensity;
+  nextNoteT += gap;
+
+  playNote(ctx, f, nextNoteT, { reversed:isRev, dryWet:0.62 });
+
+  const ms = Math.max(0,(nextNoteT-ctx.currentTime)*1000);
+  addTimer(()=>{
+    if(!playing) return;
+    noteDisp.textContent = isRev ? `↩ ${name.replace(/\d/,'')}` : name.replace(/\d/,'');
+    noteDisp.classList.add('visible');
+    addTimer(()=>noteDisp.classList.remove('visible'),2200);
+    triggerPulse(isRev);
+  },ms);
+
+  addTimer(scheduleMain,(gap-1.4)*1000);
+}
+
+// ── Chord bloom scheduler ─────────────────────────────────────────────────────
+function scheduleChordBloom() {
+  if(!playing||!ctx) return;
+  const wait = rand(8000,18000); // every 8-18 seconds
+  addTimer(()=>{
+    if(!playing||!ctx) return;
+    if(recentNotes.length >= 2) bloomChord(ctx);
+    scheduleChordBloom();
+  }, wait);
+}
+
+// ── Polyrhythm scheduler ──────────────────────────────────────────────────────
+function schedulePolyrhythm() {
+  if(!playing||!ctx) return;
+  addTimer(()=>{
+    if(!playing||!ctx) return;
+    if(breathPhase !== 'silence') {
+      const ratio=coin(0.5)?5:6, pulse=rand(1.0,1.7);
+      const t0=ctx.currentTime+0.5;
+      playPolyLayer(ctx,ratio,pulse,t0);
+      playPolyLayer(ctx,ratio,pulse,t0+pulse*4+rand(0.5,1.5));
+    }
+    schedulePolyrhythm();
+  }, rand(20000,45000));
+}
+
+// ── Ocean swell scheduler ─────────────────────────────────────────────────────
+function scheduleOceanSwell() {
+  if(!playing||!ctx) return;
+  addTimer(()=>{
+    if(!playing||!ctx) return;
+    if(!swellActive) playOceanSwell(ctx);
+    scheduleOceanSwell();
+  }, rand(18000,40000));
+}
+
+// ── Start / stop ──────────────────────────────────────────────────────────────
+function startMusic() {
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  reverb = buildReverb(ctx);
+  masterLPF = ctx.createBiquadFilter();
+  masterLPF.type='lowpass'; masterLPF.frequency.value=5500; masterLPF.Q.value=0.4;
+  // Slowly breathe the master filter
+  masterLPF.frequency.setValueAtTime(5500,ctx.currentTime);
+  masterLPF.frequency.linearRampToValueAtTime(3800,ctx.currentTime+90);
+  masterLPF.frequency.linearRampToValueAtTime(5000,ctx.currentTime+180);
+  masterLPF.connect(ctx.destination);
+  reverb.connect(ctx.destination);
+
+  nextNoteT = ctx.currentTime+0.8;
+  breathPhase='building'; pieceDensity=1.0;
+  scheduleMain();
+  scheduleChordBloom();
+  schedulePolyrhythm();
+  updateBreathPhase();
+  addTimer(()=>{ if(playing&&ctx) playOceanSwell(ctx); }, rand(6000,14000));
+  scheduleOceanSwell();
+}
+
+function stopMusic() {
+  clearTimers();
+  if(ctx){ctx.close();ctx=null;}
+  recentNotes=[]; noteHistory=[]; lastNote=null;
+  noteDisp.textContent=''; noteDisp.classList.remove('visible');
+}
+
+const btn=document.getElementById('playBtn');
+btn.addEventListener('click',()=>{
+  playing=!playing;
+  if(playing){
+    startMusic();
+    document.getElementById('btnIcon').outerHTML=`<svg id="btnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a97a" stroke-width="2.2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+    document.getElementById('hint').style.opacity='0';
+  } else {
+    stopMusic();
+    document.getElementById('btnIcon').outerHTML=`<svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"><polygon points="5,3 19,12 5,21"/></svg>`;
+  }
+});
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+const canvas=document.getElementById('c'), g=canvas.getContext('2d');
+let W,H;
+const resize=()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;};
+resize(); window.addEventListener('resize',resize);
+
+const particles=Array.from({length:70},()=>({
+  x:Math.random(),y:Math.random(),size:rand(0.4,2.2),
+  speed:rand(0.00006,0.00022),angle:rand(0,Math.PI*2),
+  opacity:rand(0.03,0.11),drift:rand(-0.0002,0.0002)
+}));
+const threads=Array.from({length:10},()=>({
+  x:Math.random(),y:rand(0.1,0.9),len:rand(0.06,0.20),
+  speed:rand(0.00003,0.00008),opacity:rand(0.02,0.055),angle:rand(-0.12,0.12)
+}));
+
+let pulses=[], chordBloom=false;
+function triggerPulse(rev=false){
+  pulses.push({r:0,maxR:rand(90,200),opacity:rand(0.10,0.20),speed:rand(0.3,0.7),rev});
+  if(coin(0.3)) pulses.push({r:0,maxR:rand(30,80),opacity:rand(0.06,0.12),speed:rand(0.6,1.2),rev:false});
+}
+
+// Chord bloom triggers large slow expanding ring
+function triggerChordVisual(){
+  for(let i=0;i<4;i++){
+    setTimeout(()=>{
+      pulses.push({r:i*15,maxR:rand(200,350),opacity:rand(0.05,0.12),speed:rand(0.15,0.35),rev:false,chord:true});
+    },i*600);
+  }
+}
+
+let swellAlpha=0,swellTarget=0;
+setInterval(()=>{ swellTarget=swellActive?rand(0.03,0.07)*swellIntensity:0; },1500);
+
+// Watch for chord blooms to trigger visuals
+let lastChordBloom=false;
+let frame=0;
+function draw(){
+  requestAnimationFrame(draw); frame++;
+  if(chordBloom&&!lastChordBloom) triggerChordVisual();
+  lastChordBloom=chordBloom;
+
+  swellAlpha+=(swellTarget-swellAlpha)*0.003;
+  g.fillStyle='rgba(26,20,16,0.15)'; g.fillRect(0,0,W,H);
+
+  if(swellAlpha>0.003){
+    const gr=g.createRadialGradient(W/2,H*0.65,0,W/2,H/2,W*0.8);
+    gr.addColorStop(0,`rgba(60,95,118,${swellAlpha*2.5})`);
+    gr.addColorStop(0.5,`rgba(40,70,90,${swellAlpha})`);
+    gr.addColorStop(1,'transparent');
+    g.fillStyle=gr; g.fillRect(0,0,W,H);
+  }
+
+  // Chord bloom ambient glow
+  if(chordBloom){
+    const cg=g.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.55);
+    cg.addColorStop(0,`rgba(180,155,100,0.04)`);
+    cg.addColorStop(1,'transparent');
+    g.fillStyle=cg; g.fillRect(0,0,W,H);
+  }
+
+  for(const t of threads){
+    t.x+=t.speed; if(t.x>1.2)t.x=-0.2;
+    g.beginPath(); g.moveTo(t.x*W,t.y*H); g.lineTo((t.x+t.len)*W,(t.y+t.angle)*H);
+    g.strokeStyle=`rgba(200,169,122,${t.opacity})`; g.lineWidth=rand(0.2,0.7); g.stroke();
+  }
+  for(const p of particles){
+    p.angle+=p.drift; p.x+=Math.cos(p.angle)*p.speed; p.y+=Math.sin(p.angle)*p.speed*0.5;
+    if(p.x<-0.05)p.x=1.05; if(p.x>1.05)p.x=-0.05;
+    if(p.y<-0.05)p.y=1.05; if(p.y>1.05)p.y=-0.05;
+    g.beginPath(); g.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
+    g.fillStyle=`rgba(200,169,122,${p.opacity})`; g.fill();
+  }
+  if(frame%3===0){
+    g.beginPath(); g.moveTo(rand(0,W*0.6),rand(0,H)); g.lineTo(rand(W*0.3,W),rand(0,H));
+    g.strokeStyle=`rgba(200,169,122,${rand(0.006,0.025)})`; g.lineWidth=rand(0.2,0.8); g.stroke();
+  }
+  for(let i=pulses.length-1;i>=0;i--){
+    const p=pulses[i]; p.r+=p.speed; p.opacity-=p.chord?0.0005:0.0014;
+    if(p.opacity<=0||p.r>p.maxR){pulses.splice(i,1);continue;}
+    g.beginPath(); g.arc(W/2,H/2,p.r*(W/320),0,Math.PI*2);
+    g.strokeStyle=p.chord
+      ? `rgba(210,185,130,${p.opacity})`
+      : p.rev?`rgba(138,180,200,${p.opacity})`:`rgba(200,169,122,${p.opacity})`;
+    g.lineWidth=p.chord?1.5:1; g.stroke();
+  }
+}
+draw();
+</script>
+
 </body>
 </html>

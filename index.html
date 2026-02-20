@@ -30,7 +30,6 @@
   #fill-canvas { z-index:2; pointer-events:none; }
   #trail-canvas { z-index:3; pointer-events:none; }
 
-  /* Play button — centred, fades out after playing starts, reappears on hover */
   .btn-wrap {
     position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
     z-index:20; transition:opacity 3s ease; display:flex; flex-direction:column; align-items:center;
@@ -46,7 +45,6 @@
   .btn:hover { border-color:rgba(200,169,122,0.7); transform:scale(1.05); }
   .hint { font-size:0.62rem; letter-spacing:0.3em; color:var(--cream); opacity:0.22; text-transform:uppercase; margin-top:0.7rem; }
 
-  /* Bottom left — title + note indicator */
   .corner {
     position:fixed; bottom:2rem; left:2rem;
     z-index:20; display:flex; flex-direction:column; gap:0.4rem;
@@ -71,7 +69,6 @@
 <canvas id="fill-canvas"></canvas>
 <canvas id="c"></canvas>
 
-<!-- Centred play button — fades after playing -->
 <div class="btn-wrap" id="btnWrap">
   <button class="btn" id="playBtn" aria-label="Play">
     <svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"><polygon points="5,3 19,12 5,21"/></svg>
@@ -79,7 +76,6 @@
   <p class="hint" id="hint">tap to begin</p>
 </div>
 
-<!-- Bottom left — note name above title -->
 <div class="corner">
   <div class="note-indicator" id="noteDisp"></div>
   <div class="title-row">
@@ -95,8 +91,6 @@ const randInt = (a,b) => Math.floor(rand(a,b+1));
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 const coin = p => Math.random() < p;
 
-// ── G Mixolydian universe ─────────────────────────────────────────────────────
-// G A B C D E F — F natural is the Mixolydian colour note
 const MIX = {
   G2:98.00, C3:130.81, D3:146.83, E3:164.81, F3:174.61,
   G3:196.00, A3:220.00, B3:246.94,
@@ -106,18 +100,10 @@ const MIX = {
   G5:784.00, A5:880.00,
 };
 
-// Melody notes — expanded to 6 pitches, D and A less frequent than core 4
 const MELODY = ['G4','F4','E4','C4','D4','A4'];
-const CORE   = ['G4','F4','E4','C4'];   // original four — appear more often
-const COLOUR = ['D4','A4'];             // new additions — appear less often
+const CORE   = ['G4','F4','E4','C4'];
+const COLOUR = ['D4','A4'];
 
-// Voice leading transition weights
-// Format: { targetNote: weight } — higher = more likely
-// Rules:
-//   G → A  : strongly preferred
-//   D → E  : strongly preferred
-//   E → D  : forbidden (weight 0)
-//   A → G  : forbidden (weight 0)
 const TRANSITIONS = {
   G4: { A4:5, F4:2, E4:2, C4:2, D4:1 },
   F4: { E4:3, C4:3, G4:2, D4:2, A4:1 },
@@ -127,7 +113,6 @@ const TRANSITIONS = {
   A4: { E4:3, F4:3, C4:2, D4:2, G4:0 },
 };
 
-// Chord voicings — expanded with D and A
 const VOICINGS = {
   G4: ['G2','D3','G3','B3','D4','G4','B4','D5'],
   F4: ['C3','F3','A3','C4','F4','A4','C5','E5'],
@@ -151,15 +136,13 @@ let timers=[];
 const addTimer=(fn,ms)=>{const t=setTimeout(fn,ms);timers.push(t);return t;};
 const clearTimers=()=>{timers.forEach(clearTimeout);timers=[];};
 
-// ── Piece memory ──────────────────────────────────────────────────────────────
-let recentNotes = [];    // last 6 melody notes played
-let noteHistory = [];    // full sequence history
-let breathPhase = 'building'; // building | full | withdrawing | silence
-let pieceDensity = 1.0;  // multiplier on gap timing
+let recentNotes = [];
+let noteHistory = [];
+let breathPhase = 'building';
+let pieceDensity = 1.0;
 let swellActive=false, swellIntensity=0;
 let nextNoteT=0;
 
-// ── Reverb (synthesised impulse response) ─────────────────────────────────────
 function buildReverb(actx) {
   const sr=actx.sampleRate, dur=5.0, decay=4.0;
   const len=Math.floor(sr*dur);
@@ -178,7 +161,6 @@ function buildReverb(actx) {
   const conv=actx.createConvolver(); conv.buffer=ir; return conv;
 }
 
-// ── Pink noise ────────────────────────────────────────────────────────────────
 function makePink(actx,dur) {
   const sr=actx.sampleRate;
   const buf=actx.createBuffer(2,Math.floor(sr*dur),sr);
@@ -196,40 +178,32 @@ function makePink(actx,dur) {
   return buf;
 }
 
-// ── Tape curve ────────────────────────────────────────────────────────────────
 function tapeCurve(amt=35) {
   const n=256,c=new Float32Array(n);
   for (let i=0;i<n;i++){const x=i*2/n-1;c[i]=(Math.PI+amt)*x/(Math.PI+amt*Math.abs(x));}
   return c;
 }
 
-// ── Piano note ────────────────────────────────────────────────────────────────
 function playNote(actx, freqHz, time, opts={}) {
   const {
     vol=rand(0.10,0.16), decay=rand(4.0,7.0),
     reversed=false, quiet=false, dryWet=0.62,
     wobble=rand(0.997,1.003)
   } = opts;
-
   const f0=freqHz*wobble;
   const v=quiet?vol*0.4:vol;
-
   const dryG=actx.createGain(); dryG.gain.value=v*(1-dryWet);
   const wetG=actx.createGain(); wetG.gain.value=v*dryWet;
   dryG.connect(masterLPF); wetG.connect(reverb);
-
   const preLPF=actx.createBiquadFilter(); preLPF.type='lowpass';
   preLPF.frequency.value=rand(1800,2600); preLPF.Q.value=0.5;
   preLPF.connect(dryG); preLPF.connect(wetG);
-
   const warmth=actx.createBiquadFilter(); warmth.type='highshelf';
   warmth.frequency.value=4000; warmth.gain.value=rand(-5,-9);
   warmth.connect(preLPF);
-
   const shaper=actx.createWaveShaper();
   shaper.curve=tapeCurve(rand(20,45)); shaper.oversample='4x';
   shaper.connect(warmth);
-
   const env=actx.createGain();
   if (reversed) {
     env.gain.setValueAtTime(0.001,time);
@@ -242,8 +216,6 @@ function playNote(actx, freqHz, time, opts={}) {
     env.gain.exponentialRampToValueAtTime(0.001,time+decay);
   }
   env.connect(shaper);
-
-  // Inharmonic partials — acoustic piano character
   const ih=1.0006;
   [
     {m:1.000,      g:1.00,d:1.00},
@@ -266,8 +238,6 @@ function playNote(actx, freqHz, time, opts={}) {
     osc.connect(pg); pg.connect(env);
     osc.start(time); osc.stop(time+decay+2);
   });
-
-  // Hammer transient
   if (!reversed) {
     const hLen=Math.floor(actx.sampleRate*0.035);
     const hb=actx.createBuffer(1,hLen,actx.sampleRate);
@@ -282,36 +252,23 @@ function playNote(actx, freqHz, time, opts={}) {
   }
 }
 
-// ── Self-referencing chord bloom ──────────────────────────────────────────────
-// Looks at recentNotes, picks the best voicing, fades in a lush chord
 function bloomChord(actx) {
   if (!playing || !ctx) return;
-
-  // Analyse what was recently played
   const unique = [...new Set(recentNotes.slice(-6))];
   let voicingKey = 'G4';
-
-  if (unique.length >= 5) {
-    voicingKey = 'ALL';
-  } else if (unique.length >= 4 && unique.includes('G4') && unique.includes('A4')) {
-    voicingKey = 'ALL';
-  } else if (unique.includes('D4') && unique.includes('A4')) {
-    voicingKey = 'DA';
-  } else if (unique.includes('G4') && unique.includes('A4')) {
-    voicingKey = 'GA';
-  } else if (unique.includes('D4')) {
-    voicingKey = 'D4';
-  } else if (unique.includes('A4')) {
-    voicingKey = 'A4';
-  } else if (unique.length >= 4) {
-    voicingKey = 'ALL';
-  } else if (unique.length === 3) {
+  if (unique.length >= 5) { voicingKey = 'ALL'; }
+  else if (unique.length >= 4 && unique.includes('G4') && unique.includes('A4')) { voicingKey = 'ALL'; }
+  else if (unique.includes('D4') && unique.includes('A4')) { voicingKey = 'DA'; }
+  else if (unique.includes('G4') && unique.includes('A4')) { voicingKey = 'GA'; }
+  else if (unique.includes('D4')) { voicingKey = 'D4'; }
+  else if (unique.includes('A4')) { voicingKey = 'A4'; }
+  else if (unique.length >= 4) { voicingKey = 'ALL'; }
+  else if (unique.length === 3) {
     voicingKey = unique.includes('G4') && unique.includes('F4') ? 'GF'
                : unique.includes('G4') && unique.includes('E4') ? 'GE'
                : unique.includes('G4') && unique.includes('C4') ? 'GC'
                : unique.includes('F4') && unique.includes('E4') ? 'FE'
-               : unique.includes('F4') && unique.includes('C4') ? 'FC'
-               : 'EC';
+               : unique.includes('F4') && unique.includes('C4') ? 'FC' : 'EC';
   } else if (unique.length === 2) {
     if      (unique.includes('G4') && unique.includes('F4')) voicingKey='GF';
     else if (unique.includes('G4') && unique.includes('E4')) voicingKey='GE';
@@ -321,66 +278,47 @@ function bloomChord(actx) {
     else if (unique.includes('D4') && unique.includes('A4')) voicingKey='DA';
     else if (unique.includes('G4') && unique.includes('A4')) voicingKey='GA';
     else voicingKey='EC';
-  } else if (unique.length === 1) {
-    voicingKey = unique[0];
-  }
+  } else if (unique.length === 1) { voicingKey = unique[0]; }
 
   const notes = VOICINGS[voicingKey] || VOICINGS['G4'];
-  const chordDur = rand(8, 16);   // chord sustains for a long time
-  const fadeIn   = rand(2.5, 5);  // very slow fade in
+  const chordDur = rand(8, 16);
+  const fadeIn   = rand(2.5, 5);
   const now = actx.currentTime;
-
-  // Master chord gain — slow fade in and out
   const chordMaster = actx.createGain();
   chordMaster.gain.setValueAtTime(0, now);
   chordMaster.gain.linearRampToValueAtTime(rand(0.06,0.12), now+fadeIn);
   chordMaster.gain.setValueAtTime(rand(0.06,0.12), now+chordDur*0.6);
   chordMaster.gain.linearRampToValueAtTime(0, now+chordDur);
-
-  // Chord goes heavily into reverb for lushness
   const chordWet = actx.createGain(); chordWet.gain.value=0.85;
   const chordDry = actx.createGain(); chordDry.gain.value=0.15;
   chordMaster.connect(chordWet); chordWet.connect(reverb);
   chordMaster.connect(chordDry); chordDry.connect(masterLPF);
-
-  // Very gentle LPF on chord — silky
   const chordLPF = actx.createBiquadFilter();
   chordLPF.type='lowpass'; chordLPF.frequency.value=rand(900,1400); chordLPF.Q.value=0.3;
   chordLPF.connect(chordMaster);
-
-  // Play each note of the chord as a sustained sine with harmonics
   notes.forEach((noteName, i) => {
-    const f = MIX[noteName];
-    if (!f) return;
-    // Stagger entry slightly so chord blooms from bottom to top
+    const f = MIX[noteName]; if (!f) return;
     const stagger = i * rand(0.15, 0.4);
     const osc1=actx.createOscillator(); osc1.type='sine'; osc1.frequency.value=f*rand(0.998,1.002);
     const osc2=actx.createOscillator(); osc2.type='sine'; osc2.frequency.value=f*2.001;
     const osc3=actx.createOscillator(); osc3.type='sine'; osc3.frequency.value=f*3.002;
-
     const og=actx.createGain();
     og.gain.setValueAtTime(0, now+stagger);
     og.gain.linearRampToValueAtTime(1.0/(notes.length*0.7), now+stagger+rand(1,2.5));
     og.gain.setValueAtTime(1.0/(notes.length*0.7), now+chordDur*0.55);
     og.gain.linearRampToValueAtTime(0, now+chordDur-stagger);
-
     const h2g=actx.createGain(); h2g.gain.value=0.18;
     const h3g=actx.createGain(); h3g.gain.value=0.07;
-
     osc1.connect(og); og.connect(chordLPF);
     osc2.connect(h2g); h2g.connect(chordLPF);
     osc3.connect(h3g); h3g.connect(chordLPF);
-
     const end=now+chordDur+2;
     [osc1,osc2,osc3].forEach(o=>{o.start(now+stagger);o.stop(end);});
   });
-
-  // Trigger visual bloom
   chordBloom=true;
   setTimeout(()=>{ chordBloom=false; }, chordDur*1000*0.7);
 }
 
-// ── Ocean swell ───────────────────────────────────────────────────────────────
 function playOceanSwell(actx) {
   const dur=rand(16,28);
   const buf=makePink(actx,dur);
@@ -407,7 +345,6 @@ function playOceanSwell(actx) {
   setTimeout(()=>{swellActive=false;swellIntensity=0;},dur*1000);
 }
 
-// ── Polyrhythm layer ──────────────────────────────────────────────────────────
 function playPolyLayer(actx, ratio, pulseLen, startT) {
   const step=(pulseLen*4)/ratio;
   for(let i=0;i<ratio;i++){
@@ -416,65 +353,42 @@ function playPolyLayer(actx, ratio, pulseLen, startT) {
   }
 }
 
-// ── Breathing / density arc ───────────────────────────────────────────────────
-// The piece breathes: builds density, sits full, then withdraws, rests, rebuilds
 function updateBreathPhase() {
   const phases = ['building','full','withdrawing','silence'];
   const durations = {
-    building:  rand(45000,90000),
-    full:      rand(30000,60000),
-    withdrawing: rand(40000,70000),
-    silence:   rand(15000,35000),
+    building:  rand(45000,90000), full: rand(30000,60000),
+    withdrawing: rand(40000,70000), silence: rand(15000,35000),
   };
   const densities = { building:1.0, full:0.85, withdrawing:1.4, silence:2.8 };
-
-  const next = (current) => {
-    const idx = phases.indexOf(current);
-    return phases[(idx+1)%phases.length];
-  };
-
+  const next = (current) => { const idx=phases.indexOf(current); return phases[(idx+1)%phases.length]; };
   const transition = () => {
     if (!playing) return;
     breathPhase = next(breathPhase);
     pieceDensity = densities[breathPhase];
     addTimer(transition, durations[breathPhase]);
   };
-
   addTimer(transition, durations[breathPhase]);
 }
 
-// ── Note picker — weighted transitions + voice leading rules ──────────────────
 function pickMelodyNote() {
   let pool = [];
-
   if (lastNote && TRANSITIONS[lastNote]) {
-    // Build pool from transition weights
     const t = TRANSITIONS[lastNote];
     for (const [note, weight] of Object.entries(t)) {
       for (let i=0; i<weight; i++) pool.push(note);
     }
   } else {
-    // No last note yet — weight core notes more heavily than colour notes
-    for (const n of CORE)   { pool.push(n,n,n); }   // 3x weight
-    for (const n of COLOUR) { pool.push(n); }         // 1x weight
+    for (const n of CORE)   { pool.push(n,n,n); }
+    for (const n of COLOUR) { pool.push(n); }
   }
-
-  // Memory drift — after 20+ notes, occasionally echo a ghost note from history
-  // (only if that ghost note is a legal move from current position)
   if (noteHistory.length > 16 && coin(0.22) && lastNote) {
     const lookback = Math.floor(rand(4,9));
     const ghost = noteHistory[noteHistory.length - lookback];
     const allowed = TRANSITIONS[lastNote] || {};
-    if (ghost && (allowed[ghost] || 0) > 0) {
-      pool.push(ghost, ghost); // extra pull toward the ghost
-    }
+    if (ghost && (allowed[ghost] || 0) > 0) { pool.push(ghost, ghost); }
   }
-
-  // Remove any notes with weight 0 (forbidden moves) — already excluded
-  // but safety: filter out same note if pool has other options
   const filtered = pool.filter(n => n !== lastNote);
   const chosen = filtered.length > 0 ? pick(filtered) : pick(pool);
-
   lastNote = chosen;
   noteHistory.push(chosen);
   recentNotes.push(chosen);
@@ -483,7 +397,6 @@ function pickMelodyNote() {
   return chosen;
 }
 
-// ── Main melody scheduler ─────────────────────────────────────────────────────
 const noteDisp=document.getElementById('noteDisp');
 
 function scheduleMain() {
@@ -496,22 +409,15 @@ function scheduleMain() {
   const noteVol = rand(0.10,0.16);
   const noteDecay = rand(4.0,7.0);
   nextNoteT += gap;
-
   playNote(ctx, f, nextNoteT, { reversed:isRev, dryWet:0.62, vol:noteVol, decay:noteDecay });
-
   const ms = Math.max(0,(nextNoteT-ctx.currentTime)*1000);
-  addTimer(()=>{
-    if(!playing) return;
-    triggerPulse(isRev, noteVol, noteDecay);
-  },ms);
-
+  addTimer(()=>{ if(!playing) return; triggerPulse(isRev, noteVol, noteDecay); }, ms);
   addTimer(scheduleMain,(gap-1.4)*1000);
 }
 
-// ── Chord bloom scheduler ─────────────────────────────────────────────────────
 function scheduleChordBloom() {
   if(!playing||!ctx) return;
-  const wait = rand(12000,22000); // every 12-22 seconds
+  const wait = rand(12000,22000);
   addTimer(()=>{
     if(!playing||!ctx) return;
     if([...new Set(recentNotes)].length >= 4) bloomChord(ctx);
@@ -519,7 +425,6 @@ function scheduleChordBloom() {
   }, wait);
 }
 
-// ── Polyrhythm scheduler ──────────────────────────────────────────────────────
 function schedulePolyrhythm() {
   if(!playing||!ctx) return;
   addTimer(()=>{
@@ -529,14 +434,12 @@ function schedulePolyrhythm() {
       const t0=ctx.currentTime+0.5;
       playPolyLayer(ctx,ratio,pulse,t0);
       playPolyLayer(ctx,ratio,pulse,t0+pulse*4+rand(0.5,1.5));
-      // Spawn an orb for each poly note
       for(let pi=0;pi<ratio;pi++) setTimeout(triggerPolyOrb, pi*(pulse*4/ratio)*1000);
     }
     schedulePolyrhythm();
   }, rand(20000,45000));
 }
 
-// ── Ocean swell scheduler ─────────────────────────────────────────────────────
 function scheduleOceanSwell() {
   if(!playing||!ctx) return;
   addTimer(()=>{
@@ -546,34 +449,19 @@ function scheduleOceanSwell() {
   }, rand(18000,40000));
 }
 
-// ── Start / stop ──────────────────────────────────────────────────────────────
 function startMusic() {
   ctx = new (window.AudioContext||window.webkitAudioContext)();
   reverb = buildReverb(ctx);
-
-  // Master limiter — hard ceiling, prevents any clipping
   const limiter = ctx.createDynamicsCompressor();
-  limiter.threshold.value = -3;   // kicks in just below 0dB
-  limiter.knee.value = 0;         // hard knee — true limiting
-  limiter.ratio.value = 20;       // heavy ratio — acts as a brick wall
-  limiter.attack.value = 0.001;   // very fast attack — catches transients
-  limiter.release.value = 0.1;
+  limiter.threshold.value=-3; limiter.knee.value=0; limiter.ratio.value=20;
+  limiter.attack.value=0.001; limiter.release.value=0.1;
   limiter.connect(ctx.destination);
-
-  // Master compressor — gentle glue across the whole mix
   const compressor = ctx.createDynamicsCompressor();
-  compressor.threshold.value = -18;  // gentle, starts working early
-  compressor.knee.value = 10;        // soft knee — transparent
-  compressor.ratio.value = 3;        // gentle ratio — just glue, not pumping
-  compressor.attack.value = 0.02;
-  compressor.release.value = 0.4;
+  compressor.threshold.value=-18; compressor.knee.value=10; compressor.ratio.value=3;
+  compressor.attack.value=0.02; compressor.release.value=0.4;
   compressor.connect(limiter);
-
-  // Master gain — pull overall level down slightly so compressor has headroom
-  const masterGain = ctx.createGain();
-  masterGain.gain.value = 0.7;
+  const masterGain = ctx.createGain(); masterGain.gain.value=0.7;
   masterGain.connect(compressor);
-
   masterLPF = ctx.createBiquadFilter();
   masterLPF.type='lowpass'; masterLPF.frequency.value=5500; masterLPF.Q.value=0.4;
   masterLPF.frequency.setValueAtTime(5500,ctx.currentTime);
@@ -581,14 +469,10 @@ function startMusic() {
   masterLPF.frequency.linearRampToValueAtTime(5000,ctx.currentTime+180);
   masterLPF.connect(masterGain);
   reverb.connect(masterGain);
-
   nextNoteT = ctx.currentTime+0.8;
   breathPhase='building'; pieceDensity=1.0;
   pieceStartTime = Date.now();
-  scheduleMain();
-  scheduleChordBloom();
-  schedulePolyrhythm();
-  updateBreathPhase();
+  scheduleMain(); scheduleChordBloom(); schedulePolyrhythm(); updateBreathPhase();
   addTimer(()=>{ if(playing&&ctx) playOceanSwell(ctx); }, rand(6000,14000));
   scheduleOceanSwell();
 }
@@ -606,12 +490,8 @@ const stopBtn=document.getElementById('stopBtn');
 let btnHideTimer=null;
 
 stopBtn.addEventListener('click',()=>{
-  playing=false;
-  stopMusic();
-  stopBtn.classList.remove('visible');
-  butterflies.length=0;
-  btnWrap.style.display='flex';
-  btnWrap.style.opacity='1';
+  playing=false; stopMusic(); stopBtn.classList.remove('visible');
+  butterflies.length=0; btnWrap.style.display='flex'; btnWrap.style.opacity='1';
   document.getElementById('btnIcon').outerHTML=`<svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"><polygon points="5,3 19,12 5,21"/></svg>`;
   document.getElementById('hint').style.opacity='0.22';
 });
@@ -622,13 +502,10 @@ btn.addEventListener('click',()=>{
     startMusic();
     document.getElementById('btnIcon').outerHTML=`<svg id="btnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a97a" stroke-width="2.2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
     document.getElementById('hint').style.opacity='0';
-    // Fade button out after 4 seconds
     btnHideTimer = setTimeout(()=>{ btnWrap.style.display='none'; }, 2000);
     setTimeout(()=>{ if(playing) document.getElementById('stopBtn').classList.add('visible'); }, 20000);
   } else {
-    stopMusic();
-    clearTimeout(btnHideTimer);
-    btnWrap.classList.remove('hide');
+    stopMusic(); clearTimeout(btnHideTimer); btnWrap.classList.remove('hide');
     document.getElementById('btnIcon').outerHTML=`<svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"><polygon points="5,3 19,12 5,21"/></svg>`;
   }
 });
@@ -644,166 +521,114 @@ const resize=()=>{
 };
 resize(); window.addEventListener('resize',resize);
 
-// ── Dusk palette ──────────────────────────────────────────────────────────────
 let pieceAge=0, pieceStartTime=null;
-let hueShift=0;        // 0-1, cycles through full colour wheel slowly
-let hueTarget=0;       // target hue — swell pushes this toward blue/purple
+let hueShift=0, hueTarget=0;
 
-// Returns [r,g,b] interpolated through dusk palette based on piece age
-// Full sunset wheel — 8 stops covering gold→yellow→coral→pink→violet→blue→indigo→back
 const WHEEL = [
-  {r:248,g:195,b: 95},  // 0.00 warm gold
-  {r:252,g:220,b:110},  // 0.12 pale yellow
-  {r:245,g:168,b:105},  // 0.25 amber orange
-  {r:238,g:128,b:138},  // 0.37 coral pink
-  {r:210,g:115,b:175},  // 0.50 rose violet
-  {r:165,g:128,b:215},  // 0.62 soft purple
-  {r:118,g:145,b:225},  // 0.75 periwinkle blue
-  {r:105,g:175,b:210},  // 0.87 sky teal
-  {r:248,g:195,b: 95},  // 1.00 back to gold (loop)
+  {r:248,g:195,b: 95},
+  {r:252,g:220,b:110},
+  {r:245,g:168,b:105},
+  {r:238,g:128,b:138},
+  {r:210,g:115,b:175},
+  {r:165,g:128,b:215},
+  {r:118,g:145,b:225},
+  {r:105,g:175,b:210},
+  {r:248,g:195,b: 95},
 ];
 
 function wheelRGB(hue) {
-  // hue 0-1 cycles through full WHEEL
   const h = ((hue % 1.0) + 1.0) % 1.0;
   const seg = h * (WHEEL.length-1);
   const i = Math.min(Math.floor(seg), WHEEL.length-2);
   const s = seg - i;
   const a=WHEEL[i], b2=WHEEL[i+1];
-  return [
-    Math.round(a.r+(b2.r-a.r)*s),
-    Math.round(a.g+(b2.g-a.g)*s),
-    Math.round(a.b+(b2.b-a.b)*s)
-  ];
+  return [Math.round(a.r+(b2.r-a.r)*s), Math.round(a.g+(b2.g-a.g)*s), Math.round(a.b+(b2.b-a.b)*s)];
 }
 
 function duskRGB(bias, age) {
-  // bias 0-1 shifts hue; age slowly drifts base hue; hueShift applied globally
   const baseHue = hueShift + bias * 0.28;
   const [r,gv,bv] = wheelRGB(baseHue);
   return [Math.max(0,Math.min(255,r)), Math.max(0,Math.min(255,gv)), Math.max(0,Math.min(255,bv))];
 }
 function dc(bias, opacity, age){ const [r,gv,b]=duskRGB(bias,age); return `rgba(${r},${gv},${b},${Math.min(Math.max(opacity,0),0.99)})`; }
 
-// ── Watercolour wash layers ───────────────────────────────────────────────────
-// Several large soft blobs that slowly drift — give the watercolour feel
-// ── Voronoi color seeds ────────────────────────────────────────────────────────
+// ── FIX 1: Seeds — wider hue spread, faster cycling, more opaque ──────────────
 const seeds = Array.from({length:18},(_,si)=>({
   x: rand(0.02, 0.98), y: rand(0.02, 0.98),
   vx: rand(-0.000025, 0.000025), vy: rand(-0.000020, 0.000020),
-  hue: si/18,
-  hueSpeed: rand(0.000025, 0.000065),
-  opacity: 0, targetOp: rand(0.045, 0.085),
+  hue: si/18,                              // evenly spaced across full wheel
+  hueSpeed: rand(0.00008, 0.00018),        // faster — colors visibly shift
+  opacity: 0, targetOp: rand(0.13, 0.22), // more opaque — clearly distinct regions
   phase: rand(0, Math.PI*2), phaseSpeed: rand(0.0003, 0.0008),
 }));
 
-const washes = Array.from({length:9},()=>({
+const washes = Array.from({length:9},(_,wi)=>({
   x:rand(0.0,1.0), y:rand(0.0,1.0),
   vx:rand(-0.00004,0.00004), vy:rand(-0.00003,0.00003),
   r:rand(0.32,0.62),
-  bias:rand(0,1),
+  bias: wi/9,
+  biasDrift: rand(-0.0003,0.0003),
   opacity:rand(0.028,0.058),
-  opacityActual:0,  // fades in to avoid pop
+  opacityActual:0,
   phase:rand(0,Math.PI*2),
   phaseSpeed:rand(0.0002,0.0006)
 }));
 
-// ── Orbs ──────────────────────────────────────────────────────────────────────
-// One orb per note — floats in organic arcs, lingers, fills screen over time
 let butterflies=[];
 
 function spawnButterfly(opts={}) {
   const {vol=rand(0.10,0.15), decay=rand(4,7), rev=false}=opts;
-  const baseSize = rand(10,18)*(0.7+vol*1.0);  // larger, crisper at birth
+  const baseSize = rand(10,18)*(0.7+vol*1.0);
   butterflies.push({
-    x: rand(0.08, 0.92),
-    y: rand(0.15, 0.85),
-    // Wide roaming arcs — slow turn rate so orb travels far before curving
-    speed: rand(0.00012, 0.00022),       // slow enough that trail dots overlap smoothly
+    x: rand(0.08, 0.92), y: rand(0.15, 0.85),
+    speed: rand(0.00010, 0.00018),
     angle: rand(0, Math.PI*2),
-    angleV: rand(-0.00004, 0.00004),     // near-straight — arc radius spans whole canvas
-    angleV2: rand(-0.000004, 0.000004),  // almost zero drift
-    sinX: 0, sinXSpeed: 0, sinXAmp: 0,  // no local wiggle overlays
-    sinY: 0, sinYSpeed: 0, sinYAmp: 0,  // — they caused the scribbling
-    size: baseSize,
-    opacity: 0,
+    angleV: rand(-0.00004, 0.00004),
+    angleV2: rand(-0.000004, 0.000004),
+    sinX:0, sinXSpeed:0, sinXAmp:0, sinY:0, sinYSpeed:0, sinYAmp:0,
+    size: baseSize, opacity: 0,
     targetOpacity: rand(0.28, 0.55),
-    life: 1.0,
-    decay: 0.00012 + (1/decay)*0.0001,
-    rev,
-    bias: rev ? rand(0.55,0.95) : rand(0.05,0.55),
-    age: pieceAge,
-    trail: [],
-    trailMax: 280,
-    mergeCount: 0,      // how many times this orb has merged — loses self each time
+    life: 1.0, decay: 0.00012 + (1/decay)*0.0001,
+    rev, bias: rev ? rand(0.55,0.95) : rand(0.05,0.55),
+    age: pieceAge, trail: [], trailMax: 280, mergeCount: 0,
   });
 }
 
-// ── Triggers ──────────────────────────────────────────────────────────────────
-
-// ── Spawn orb at specific position/angle ──────────────────────────────────────
 function spawnOrbAt(x, y, angle, opts={}) {
   const {vol=rand(0.10,0.15), decay=rand(4,7), rev=false, linkedAngleRef=null}=opts;
   const baseSize = rand(10,18)*(0.7+vol*1.0);
   const orb = {
-    x, y,
-    speed: rand(0.00012, 0.00022),
-    angle,
-    angleV: rand(-0.00004, 0.00004),
-    angleV2: rand(-0.000004, 0.000004),
-    sinX:0, sinXSpeed:0, sinXAmp:0,
-    sinY:0, sinYSpeed:0, sinYAmp:0,
-    size: baseSize,
-    opacity: 0,
-    targetOpacity: rand(0.28, 0.55),
-    life: 1.0,
-    decay: 0.00012 + (1/decay)*0.0001,
-    rev,
-    bias: rev ? rand(0.55,0.95) : rand(0.05,0.55),
-    age: pieceAge,
-    trail: [],
-    trailMax: 280,
-    mergeCount: 0,
-    linkedAngleRef,   // if set, share angle with sibling orbs for 10s
-    linkedUntil: linkedAngleRef ? (Date.now()/1000 + 10) : 0,
+    x, y, speed: rand(0.00010, 0.00018), angle,
+    angleV: rand(-0.00004, 0.00004), angleV2: rand(-0.000004, 0.000004),
+    sinX:0, sinXSpeed:0, sinXAmp:0, sinY:0, sinYSpeed:0, sinYAmp:0,
+    size: baseSize, opacity: 0, targetOpacity: rand(0.28, 0.55),
+    life: 1.0, decay: 0.00012 + (1/decay)*0.0001,
+    rev, bias: rev ? rand(0.55,0.95) : rand(0.05,0.55),
+    age: pieceAge, trail: [], trailMax: 280, mergeCount: 0,
+    linkedAngleRef, linkedUntil: linkedAngleRef ? (Date.now()/1000 + 10) : 0,
   };
-  butterflies.push(orb);
-  return orb;
+  butterflies.push(orb); return orb;
 }
 
 let pulses=[], chordBloom=false;
 
-function triggerPulse(rev=false, vol=0.13, decay=5){
-  spawnButterfly({vol, decay, rev});
-}
-
-function triggerPolyOrb(){
-  // Poly rhythm notes each get their own small quiet orb
-  spawnButterfly({vol:rand(0.05,0.08), decay:rand(2,4), rev:false});
-}
+function triggerPulse(rev=false, vol=0.13, decay=5){ spawnButterfly({vol, decay, rev}); }
+function triggerPolyOrb(){ spawnButterfly({vol:rand(0.05,0.08), decay:rand(2,4), rev:false}); }
 
 function triggerChordVisual(){
   chordBloomAlpha = 0.06;
-  // Spawn 3 orbs close together, same starting angle — they fly in formation
-  // then slowly diverge as their individual angleV takes over after 10s
   const sharedAngle = rand(0, Math.PI*2);
   const cx = rand(0.25, 0.75), cy = rand(0.25, 0.75);
-  const angleRef = {angle: sharedAngle}; // shared mutable reference
+  const angleRef = {angle: sharedAngle};
   const spread = 0.04;
   for(let i=0;i<3;i++){
     const ox = cx + (i-1)*spread*Math.cos(sharedAngle + Math.PI*0.5);
     const oy = cy + (i-1)*spread*Math.sin(sharedAngle + Math.PI*0.5);
-    const orb = spawnOrbAt(ox, oy, sharedAngle, {
-      vol:rand(0.07,0.11), decay:rand(8,14), rev:false,
-      linkedAngleRef: angleRef
-    });
+    spawnOrbAt(ox, oy, sharedAngle, {vol:rand(0.07,0.11), decay:rand(8,14), rev:false, linkedAngleRef: angleRef});
   }
 }
 
-let swellAlpha=0, swellTarget=0;
-let chordBloomAlpha=0;
-let swellErase=0;       // 0-1, drives trail canvas clearing during swell
-let prevSwellActive=false;
+let swellAlpha=0, swellTarget=0, chordBloomAlpha=0, swellErase=0;
 setInterval(()=>{ swellTarget=swellActive?rand(0.025,0.055)*swellIntensity:0; },1500);
 
 let lastChordBloom=false, frame=0;
@@ -813,41 +638,27 @@ function draw(){
   if(chordBloom&&!lastChordBloom) triggerChordVisual();
   lastChordBloom=chordBloom;
   if(pieceStartTime) pieceAge=(Date.now()-pieceStartTime)/1000;
-  // Hue slowly cycles on its own; pink noise swell pushes toward blue-violet range
-  hueShift += 0.000035;  // full cycle in ~8 minutes — always changing
+  hueShift += 0.000035;
   if(swellAlpha > 0.01){
-    // Swell nudges hue toward blue-purple zone (0.6-0.75 on wheel)
     const swellHue = 0.62 + Math.sin(pieceAge*0.08)*0.08;
     hueShift += (swellHue - ((hueShift%1+1)%1)) * swellAlpha * 0.008;
   }
-
   swellAlpha += (swellTarget-swellAlpha)*0.003;
-  chordBloomAlpha *= 0.985; // fade out chord bloom wash
+  chordBloomAlpha *= 0.985;
 
-  // ── Plaster ground ───────────────────────────────────────────────────────────
-  // Pearl white base — the gesso ground everything glazes over
-  // Very low alpha so it accumulates slowly, giving depth not flatness
   const t = Math.min(pieceAge/320,1);
   const bgR=Math.round(255-t*8), bgG=Math.round(250-t*10), bgB=Math.round(242-t*6);
 
-  // Swell erase
-  if(swellActive){
-    swellErase += (Math.min(swellIntensity*0.85,0.92)-swellErase)*0.003;
-  } else {
-    swellErase += (0-swellErase)*0.001;
-  }
+  if(swellActive){ swellErase += (Math.min(swellIntensity*0.85,0.92)-swellErase)*0.003; }
+  else           { swellErase += (0-swellErase)*0.001; }
+
   const baseFade = breathPhase==='silence'?0.0014:0.0003;
   const trailFade = baseFade + swellErase*0.016;
   if(frame%2===0){ tg.fillStyle=`rgba(${bgR},${bgG},${bgB},${trailFade})`; tg.fillRect(0,0,W,H); }
-  // Fill canvas fades slightly faster so color shifts stay fresh
   const fillFade = baseFade*0.6 + swellErase*0.012;
   if(frame%4===0){ fg.fillStyle=`rgba(${bgR},${bgG},${bgB},${Math.min(fillFade,0.99)})`; fg.fillRect(0,0,W,H); }
 
-  // ── Enclosed region detection — run worker periodically ─────────────────────
-  // ── Voronoi seed region fills ────────────────────────────────────────────────
-  // Each seed paints its own color pool onto fill canvas every 2 frames
-  // Trail lines sit on top acting as dividers — each gap between trails
-  // accumulates a different color from its nearest seed
+  // ── Voronoi seed region fills ─────────────────────────────────────────────────
   if(frame%2===0){
     for(const s of seeds){
       s.x += s.vx; s.y += s.vy;
@@ -856,8 +667,6 @@ function draw(){
       s.hue = (s.hue + s.hueSpeed) % 1;
       s.phase += s.phaseSpeed;
       s.opacity += (s.targetOp - s.opacity) * 0.005;
-
-      // Radius = half distance to nearest neighbour so colors don't bleed together
       let minDist = 1e9;
       for(const s2 of seeds){
         if(s2===s) continue;
@@ -868,32 +677,30 @@ function draw(){
       const pulse  = 1 + Math.sin(s.phase)*0.07;
       const r0     = paintR * pulse;
       const sOp    = Math.min(s.opacity*(0.85+Math.sin(s.phase*1.3)*0.15), 0.99);
-      const [sr,sgv,sb]   = duskRGB(s.hue, pieceAge);
-      const [sr2,sgv2,sb2]= duskRGB((s.hue+0.14)%1, pieceAge);
+      const [sr,sgv,sb]    = duskRGB(s.hue, pieceAge);
+      const [sr2,sgv2,sb2] = duskRGB((s.hue+0.14)%1, pieceAge);
       const sfg = fg.createRadialGradient(s.x*W, s.y*H, 0, s.x*W, s.y*H, r0);
-      sfg.addColorStop(0,    `rgba(${sr},${sgv},${sb},${Math.min(sOp*0.82,0.99)})`);
-      sfg.addColorStop(0.42, `rgba(${sr2},${sgv2},${sb2},${Math.min(sOp*0.38,0.99)})`);
-      sfg.addColorStop(0.78, `rgba(${sr2},${sgv2},${sb2},${Math.min(sOp*0.06,0.99)})`);
+      // FIX 1: bolder fills — flat inner zone before falling off
+      sfg.addColorStop(0,    `rgba(${sr},${sgv},${sb},${Math.min(sOp,0.99)})`);
+      sfg.addColorStop(0.38, `rgba(${sr},${sgv},${sb},${Math.min(sOp*0.65,0.99)})`);
+      sfg.addColorStop(0.65, `rgba(${sr2},${sgv2},${sb2},${Math.min(sOp*0.22,0.99)})`);
       sfg.addColorStop(1,    'transparent');
       fg.beginPath(); fg.arc(s.x*W, s.y*H, r0, 0, Math.PI*2);
       fg.fillStyle=sfg; fg.fill();
     }
   }
 
-  // Pearl ground — very thin semi-opaque white coat, like primer beneath glazes
-  // Keeps surface luminous no matter how many colour layers sit on top
+  // Pearl ground
   g.fillStyle=`rgba(255,252,245,0.06)`; g.fillRect(0,0,W,H);
 
-  // ── Glaze layer 1 — large slow base field, full canvas tint ──────────────────
-  // Like the first broad colour wash on fresh plaster — sets the room tone
+  // Glaze layer 1 — base field tint
   {
     const fieldBias = (hueShift+0.1)%1;
-    const [fr,fg,fb] = duskRGB(fieldBias, pieceAge);
-    g.fillStyle=`rgba(${fr},${fg},${fb},0.028)`; g.fillRect(0,0,W,H);
+    const [fr,fgv,fb] = duskRGB(fieldBias, pieceAge);
+    g.fillStyle=`rgba(${fr},${fgv},${fb},0.028)`; g.fillRect(0,0,W,H);
   }
 
-  // ── Glaze layer 2 — wash blobs, each a separate pigment pool ─────────────────
-  // Multiple translucent passes, like successive trowel applications of tinted plaster
+  // Glaze layer 2 — wash blobs
   for(const w of washes){
     w.x+=w.vx; w.y+=w.vy; w.phase+=w.phaseSpeed;
     if(w.x<-0.5)w.x=1.5; if(w.x>1.5)w.x=-0.5;
@@ -901,13 +708,11 @@ function draw(){
     w.opacityActual = (w.opacityActual||0)+(w.opacity-(w.opacityActual||0))*0.003;
     w.bias = ((w.bias||0)+(w.biasDrift||0)+1.0)%1.0;
     const pulse=1+Math.sin(w.phase)*0.06;
-    const rPx=(w.r*Math.max(W,H)*1.1)*pulse; // larger than screen — no hard edges
+    const rPx=(w.r*Math.max(W,H)*1.1)*pulse;
     const wg=g.createRadialGradient(w.x*W,w.y*H,0,w.x*W,w.y*H,rPx);
     const op=Math.min(w.opacityActual*(0.9+Math.sin(w.phase*1.3)*0.1)+swellAlpha*0.18,0.99);
     const [r1,g1,b1]=duskRGB(w.bias, pieceAge);
     const [r2,g2,b2]=duskRGB((w.bias+0.15)%1, pieceAge);
-    // Three stops — inner pigment, mid blend, fully transparent edge
-    // This gives the colour depth and translucency of real glazed plaster
     wg.addColorStop(0,    `rgba(${r1},${g1},${b1},${Math.min(op*0.85,0.99)})`);
     wg.addColorStop(0.4,  `rgba(${r2},${g2},${b2},${Math.min(op*0.38,0.99)})`);
     wg.addColorStop(0.75, `rgba(${r2},${g2},${b2},${Math.min(op*0.08,0.99)})`);
@@ -915,23 +720,21 @@ function draw(){
     g.fillStyle=wg; g.fillRect(0,0,W,H);
   }
 
-  // ── Glaze layer 3 — swell chromatic shift ────────────────────────────────────
+  // Glaze layer 3 — swell shift
   if(swellAlpha>0.003){
-    const sg=g.createLinearGradient(0,H,W,0); // diagonal — more interesting than radial
+    const sg=g.createLinearGradient(0,H,W,0);
     sg.addColorStop(0,   dc(0.68, Math.min(swellAlpha*0.9,0.99), pieceAge));
     sg.addColorStop(0.5, dc(0.52, Math.min(swellAlpha*0.5,0.99), pieceAge));
     sg.addColorStop(1,   'transparent');
     g.fillStyle=sg; g.fillRect(0,0,W,H);
   }
 
-  // ── Specular sheen — the burnished gloss ─────────────────────────────────────
-  // Slow moving highlight — like light catching a polished plastered wall
-  // Gives that sense of looking INTO the surface not just AT it
+  // Specular sheen
   {
     const sx = 0.5+Math.sin(pieceAge*0.04)*0.35;
     const sy = 0.3+Math.cos(pieceAge*0.028)*0.25;
     const sheenR=Math.min(W,H)*0.7;
-    const sheenOp=0.04+Math.sin(pieceAge*0.06)*0.02;
+    const sheenOp=Math.min(0.04+Math.sin(pieceAge*0.06)*0.02, 0.99);
     const sg2=g.createRadialGradient(sx*W,sy*H,0,sx*W,sy*H,sheenR);
     sg2.addColorStop(0,   `rgba(255,252,248,${Math.min(sheenOp*2,0.99)})`);
     sg2.addColorStop(0.3, `rgba(255,250,245,${Math.min(sheenOp,0.99)})`);
@@ -939,14 +742,13 @@ function draw(){
     g.fillStyle=sg2; g.fillRect(0,0,W,H);
   }
 
-  // ── Micro texture — fine surface grain like burnished mineral plaster ─────────
-  // Very subtle random variation, gives material feel not digital smoothness
+  // Micro texture
   if(frame%3===0){
     const tx=rand(0,W), ty=rand(0,H), tr2=rand(8,35);
     const tg3=g.createRadialGradient(tx,ty,0,tx,ty,tr2);
     const [tr,tgv,tb]=duskRGB(rand(0,1), pieceAge);
-    tg3.addColorStop(0,   `rgba(${tr},${tgv},${tb},${rand(0.008,0.028)})`);
-    tg3.addColorStop(1,   'transparent');
+    tg3.addColorStop(0, `rgba(${tr},${tgv},${tb},${rand(0.008,0.028)})`);
+    tg3.addColorStop(1, 'transparent');
     g.fillStyle=tg3; g.beginPath(); g.arc(tx,ty,tr2,0,Math.PI*2); g.fill();
   }
 
@@ -955,23 +757,15 @@ function draw(){
     const b=butterflies[i];
     b.angleV += b.angleV2;
     b.angleV = Math.max(-0.00045, Math.min(0.00045, b.angleV));
-    if(b.merging) continue; // merge animation handles position
-    // If linked to siblings, share angle for first 10 seconds
+    if(b.merging) continue;
     if(b.linkedAngleRef && b.linkedUntil > Date.now()/1000){
-      b.angle = b.linkedAngleRef.angle + rand(-0.002,0.002); // tiny jitter so not identical
-      b.linkedAngleRef.angle += b.angleV; // one of them drives the shared angle
-    } else {
-      b.angle += b.angleV;
-    }
-    b.sinX   += b.sinXSpeed;
-    b.sinY   += b.sinYSpeed;
+      b.angle = b.linkedAngleRef.angle + rand(-0.002,0.002);
+      b.linkedAngleRef.angle += b.angleV;
+    } else { b.angle += b.angleV; }
     b.x += Math.cos(b.angle)*b.speed;
     b.y += Math.sin(b.angle)*b.speed;
-    // Record trail every frame for smooth continuous line
     b.trail.push({x:b.x, y:b.y});
     if(b.trail.length > b.trailMax) b.trail.shift();
-    // Soft wraparound — orbs drift off one edge and reappear on the other
-    // But fade out before crossing and fade back in so it's not jarring
     if(b.x < -0.08) b.x = 1.08;
     if(b.x >  1.08) b.x = -0.08;
     if(b.y < -0.08) b.y = 1.08;
@@ -980,75 +774,65 @@ function draw(){
     b.life -= b.decay;
   }
 
-  // ── Collision merging — fluid animated approach ──
+  // ── Collision merging ──
   for(let i=butterflies.length-1;i>=1;i--){
     for(let j=i-1;j>=0;j--){
       const a=butterflies[i], b=butterflies[j];
       if(!a||!b) continue;
-      if(a.merging||b.merging) continue; // already in a merge
+      if(a.merging||b.merging) continue;
       const dx=(a.x-b.x)*W, dy=(a.y-b.y)*H;
       const dist=Math.sqrt(dx*dx+dy*dy);
-      const combined=a.size+b.size;
-      if(dist < combined*0.85){
-        // Determine survivor (larger) and absorbed (smaller)
+      if(dist < (a.size+b.size)*0.85){
         const [surv, gone] = a.size>=b.size ? [b,a] : [a,b];
         const ti = butterflies.indexOf(gone);
-        // Mark survivor to grow toward final merged state
-        const ts=surv.size*surv.size, tg=gone.size*gone.size, total=ts+tg;
-        surv.mergeTargetSize = Math.min(Math.sqrt(total), 38);
-        surv.mergeTargetX    = (surv.x*ts + gone.x*tg)/total;
-        surv.mergeTargetY    = (surv.y*ts + gone.y*tg)/total;
-        surv.mergeTargetOp   = Math.min((surv.targetOpacity*ts+gone.targetOpacity*tg)/total, 0.62);
-        surv.merging         = true;
-        surv.mergeSpeed      = 0.035; // lerp speed — ~1.5s to complete
-        surv.life            = Math.max(surv.life, gone.life);
-        surv.bias            = (surv.bias*ts+gone.bias*tg)/total;
-        surv.age             = Math.min(surv.age, gone.age);
-        surv.trail           = [...gone.trail,...surv.trail].slice(-surv.trailMax);
-        surv.mergeCount      = (surv.mergeCount||0)+(gone.mergeCount||0)+1;
+        const ts=surv.size*surv.size, tgone=gone.size*gone.size, total=ts+tgone;
+        // FIX 3: smaller merge cap — 22px max
+        surv.mergeTargetSize = Math.min(Math.sqrt(total), 22);
+        surv.mergeTargetX    = (surv.x*ts + gone.x*tgone)/total;
+        surv.mergeTargetY    = (surv.y*ts + gone.y*tgone)/total;
+        surv.mergeTargetOp   = Math.min((surv.targetOpacity*ts+gone.targetOpacity*tgone)/total, 0.62);
+        surv.merging=true; surv.mergeSpeed=0.035;
+        surv.life=Math.max(surv.life,gone.life);
+        surv.bias=(surv.bias*ts+gone.bias*tgone)/total;
+        surv.age=Math.min(surv.age,gone.age);
+        surv.trail=[...gone.trail,...surv.trail].slice(-surv.trailMax);
+        surv.mergeCount=(surv.mergeCount||0)+(gone.mergeCount||0)+1;
         if(ti>-1) butterflies.splice(ti,1);
         break;
       }
     }
   }
 
-  // ── Animate merging orbs toward their target ──
+  // ── Animate merging ──
   for(const b of butterflies){
     if(!b.merging) continue;
-    // Target curves forward — angleV still applied so merge path bends naturally
     b.angle += b.angleV;
     b.mergeTargetX += Math.cos(b.angle)*b.speed;
     b.mergeTargetY += Math.sin(b.angle)*b.speed;
     b.mergeTargetX = Math.max(0.02, Math.min(0.98, b.mergeTargetX));
     b.mergeTargetY = Math.max(0.02, Math.min(0.98, b.mergeTargetY));
-    b.x    += (b.mergeTargetX    - b.x)    * b.mergeSpeed;
-    b.y    += (b.mergeTargetY    - b.y)    * b.mergeSpeed;
+    b.x    += (b.mergeTargetX - b.x)    * b.mergeSpeed;
+    b.y    += (b.mergeTargetY - b.y)    * b.mergeSpeed;
     b.size += (b.mergeTargetSize - b.size) * b.mergeSpeed;
     b.targetOpacity += (b.mergeTargetOp - b.targetOpacity) * b.mergeSpeed;
-    // Once close enough, snap and release
-    if(Math.abs(b.size-b.mergeTargetSize)<0.3 &&
-       Math.abs(b.x-b.mergeTargetX)<0.002 &&
-       Math.abs(b.y-b.mergeTargetY)<0.002){
-      b.size=b.mergeTargetSize;
-      b.merging=false;
+    if(Math.abs(b.size-b.mergeTargetSize)<0.3 && Math.abs(b.x-b.mergeTargetX)<0.002 && Math.abs(b.y-b.mergeTargetY)<0.002){
+      b.size=b.mergeTargetSize; b.merging=false;
     }
   }
 
-  // ── Draw & cull dead orbs ──
+  // ── Draw & cull ──
   for(let i=butterflies.length-1;i>=0;i--){
     const b=butterflies[i];
     if(b.life<=0){butterflies.splice(i,1);continue;}
     const lifeOp = b.life > 0.25 ? b.opacity : b.opacity*(b.life/0.25);
 
-    // ── Trail — paint onto both trail and fill canvases ──
+    // FIX 2: thinner trail dots
     if(b.trail.length > 1){
       const px=b.x*W, py=b.y*H;
       const mc = b.mergeCount||0;
       const spread = Math.min(1.0 + mc*0.55, 3.2);
-
-      // Trail canvas — crisp luminous dot traces the exact path
-      const dotR = b.size * 0.55 * spread;
-      const tOp = Math.min(b.opacity * 0.62, 0.99);
+      const dotR = b.size * 0.28 * spread;  // thinner — was 0.55
+      const tOp    = Math.min(b.opacity * 0.42, 0.99);  // less opaque — was 0.62
       const tOpMid = Math.min(tOp * 0.4, 0.99);
       const [r1,g1,b1t]=duskRGB(Math.max(0,b.bias-0.2), b.age);
       const [r2,g2,b2t]=duskRGB(Math.min(1,b.bias+0.2), b.age);
@@ -1058,40 +842,31 @@ function draw(){
       tg2.addColorStop(1,   `rgba(${r2},${g2},${b2t},0)`);
       tg.beginPath(); tg.arc(px,py,dotR,0,Math.PI*2);
       tg.fillStyle=tg2; tg.fill();
-
-      // (orb trail dot only — region color handled by Voronoi seeds below)
     }
 
     const px=b.x*W, py=b.y*H, sr=b.size;
     const mc = b.mergeCount||0;
-    // Crisp when virgin — washy and spread when merged many times
-    // spread: 1.0 (tight) → 3.2 (very washy) based on mergeCount
     const spread = Math.min(1.0 + mc*0.55, 3.2);
-    // Core opacity: bright and defined when unmerged, translucent when merged
     const coreOp = Math.min(lifeOp * Math.max(0.25, 1.0 - mc*0.18), 0.99);
     const edgeOp = Math.min(lifeOp * Math.max(0.0,  0.45 - mc*0.08), 0.99);
     const rad = sr * spread;
     const og=g.createRadialGradient(px,py,0,px,py,rad);
     const [r1,g1,b1]=duskRGB(Math.max(0,b.bias-0.2), b.age);
     const [r2,g2,b2]=duskRGB(Math.min(1,b.bias+0.25), b.age);
-    // Virgin orb: tight bright core, sharp falloff
-    // Merged orb: large diffuse wash, soft centre
     const midStop = mc===0 ? 0.35 : Math.min(0.55 + mc*0.05, 0.92);
-    og.addColorStop(0,        `rgba(${r1},${g1},${b1},${coreOp})`);
-    og.addColorStop(midStop,  `rgba(${r2},${g2},${b2},${edgeOp})`);
-    og.addColorStop(1,        `rgba(${r2},${g2},${b2},0)`);
+    og.addColorStop(0,       `rgba(${r1},${g1},${b1},${coreOp})`);
+    og.addColorStop(midStop, `rgba(${r2},${g2},${b2},${edgeOp})`);
+    og.addColorStop(1,       `rgba(${r2},${g2},${b2},0)`);
     g.beginPath(); g.arc(px,py,rad,0,Math.PI*2);
     g.fillStyle=og; g.fill();
-    // Virgin orbs get a tiny bright centre dot for extra crispness
     if(mc===0){
       g.beginPath(); g.arc(px,py,Math.max(1.5,sr*0.28),0,Math.PI*2);
-      g.fillStyle=`rgba(${r1},${g1},${b1},${lifeOp*0.7})`;
+      g.fillStyle=`rgba(${r1},${g1},${b1},${Math.min(lifeOp*0.7,0.99)})`;
       g.fill();
     }
   }
 }
 draw();
-
 </script>
 </body>
 </html>

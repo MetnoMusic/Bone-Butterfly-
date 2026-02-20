@@ -640,15 +640,15 @@ let pieceAge=0, pieceStartTime=null;
 let hueShift=0, hueTarget=0;
 
 const WHEEL = [
-  {r:248,g:195,b: 95},
-  {r:252,g:220,b:110},
-  {r:245,g:168,b:105},
-  {r:238,g:128,b:138},
-  {r:210,g:115,b:175},
-  {r:165,g:128,b:215},
-  {r:118,g:145,b:225},
-  {r:105,g:175,b:210},
-  {r:248,g:195,b: 95},
+  {r:255,g:165,b:  0},   // pure gold
+  {r:255,g:100,b:  0},   // pure orange
+  {r:255,g: 30,b: 50},   // pure red-coral
+  {r:220,g:  0,b:100},   // pure magenta-rose
+  {r:150,g:  0,b:210},   // pure violet
+  {r: 60,g: 60,b:255},   // pure indigo-blue
+  {r:  0,g:160,b:255},   // pure cyan-blue
+  {r:  0,g:210,b:180},   // pure cyan-teal
+  {r:255,g:165,b:  0},   // back to gold
 ];
 
 function wheelRGB(hue) {
@@ -661,7 +661,7 @@ function wheelRGB(hue) {
 }
 
 function duskRGB(bias, age) {
-  const baseHue = hueShift + bias * 0.28;
+  const baseHue = hueShift + bias * 0.85;
   const [r,gv,bv] = wheelRGB(baseHue);
   return [Math.max(0,Math.min(255,r)), Math.max(0,Math.min(255,gv)), Math.max(0,Math.min(255,bv))];
 }
@@ -675,7 +675,7 @@ const washes = Array.from({length:9},(_,wi)=>({
   r:rand(0.75,1.2),
   bias: wi/9,
   biasDrift: rand(-0.0003,0.0003),
-  opacity:rand(0.012,0.025),
+  opacity:rand(0.06,0.13),
   opacityActual:0,
   phase:rand(0,Math.PI*2),
   phaseSpeed:rand(0.0002,0.0006)
@@ -782,7 +782,7 @@ function draw(){
   if(!playing){
     g.clearRect(0,0,W,H);
     tg.clearRect(0,0,W,H);
-    g.fillStyle='rgba(252,248,240,1)'; g.fillRect(0,0,W,H);
+    g.fillStyle='rgba(252,242,225,1)'; g.fillRect(0,0,W,H);
     return;
   }
 
@@ -798,12 +798,12 @@ function draw(){
   chordBloomAlpha *= 0.985;
 
   const t = Math.min(pieceAge/320,1);
-  const bgR=Math.round(255-t*8), bgG=Math.round(250-t*10), bgB=Math.round(242-t*6);
+  const bgR=Math.round(252-t*8), bgG=Math.round(242-t*14), bgB=Math.round(225-t*12);
 
   if(swellActive){ swellErase += (Math.min(swellIntensity*0.85,0.92)-swellErase)*0.003; }
   else           { swellErase += (0-swellErase)*0.001; }
 
-  const baseFade = breathPhase==='silence'?0.0014:0.0003;
+  const baseFade = breathPhase==='silence'?0.0006:0.00008;
   // Density regulator — count total trail length, increase erase when too dense
   // This keeps the canvas at the sparse Japanese line-drawing quality
   const totalTrailPts = butterflies.reduce((s,b) => s + b.trail.length, 0);
@@ -983,9 +983,9 @@ function draw(){
       const vib = b.vibrancy || 0.5;
       const p0 = b.trail[b.trail.length-2];
       const p1 = b.trail[b.trail.length-1];
-      const strokeW = Math.max(0.6, b.size * (0.14 + mc*0.06));
-      // Velocity drives opacity — quiet notes barely visible, loud notes vivid
-      const tOp = Math.min(b.opacity * (0.18 + vib * 0.32), 0.99);
+      const strokeW = Math.max(0.4, b.size * 0.08);  // thin like a brush pen
+      // Ink — high opacity, crisp, velocity drives darkness
+      const tOp = Math.min(b.opacity * (0.75 + vib * 0.24), 0.99);
       // Velocity shifts color — quiet=desaturated/pale, loud=more saturated/shifted
       const biasMod = b.bias + (vib - 0.5) * 0.18;
       const [r1,g1,b1t]=duskRGB(Math.max(0,biasMod-0.15), b.age);

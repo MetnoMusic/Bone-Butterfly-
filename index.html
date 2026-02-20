@@ -15,19 +15,14 @@
     align-items:center; justify-content:center;
     overflow:hidden; user-select:none;
   }
-  body::before {
-    content:''; position:fixed; inset:0;
-    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
-    opacity:0.35; pointer-events:none; z-index:10;
-  }
+
   body::after {
     content:''; position:fixed; inset:0;
     background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.78) 100%);
     pointer-events:none; z-index:9;
   }
-  canvas { position:fixed; inset:0; width:100%; height:100%; }
+  canvas { position:fixed; inset:0; }
   #c { z-index:1; }
-  #fill-canvas { z-index:2; pointer-events:none; }
   #trail-canvas { z-index:3; pointer-events:none; }
 
   .btn-wrap {
@@ -66,7 +61,6 @@
 </head>
 <body>
 <canvas id="trail-canvas"></canvas>
-<canvas id="fill-canvas"></canvas>
 <canvas id="c"></canvas>
 
 <div class="btn-wrap" id="btnWrap">
@@ -256,13 +250,30 @@ function playNote(actx, freqHz, time, opts={}) {
   const {
     vol=rand(0.10,0.16), decay=rand(4.0,7.0),
     reversed=false, quiet=false, dryWet=0.62,
-    wobble=rand(0.997,1.003)
+    wobble=rand(0.997,1.003),
+    pan=0,           // -1 (full left) to 1 (full right), 0 = centre
+    pannerRef=null,  // if provided, store the panner node here for live updates
   } = opts;
   const f0=freqHz*wobble;
   const v=quiet?vol*0.4:vol;
+
+  // Stereo panner — sits at the very top of the chain before dry/wet split
+  // Both dry and reverb send are panned: dry fully, reverb send at 50% intensity
+  // This gives clear stereo placement while keeping reverb tail spacious
+  const panner = actx.createStereoPanner();
+  panner.pan.value = Math.max(-1, Math.min(1, pan));
+  panner.connect(masterLPF);
+  if(pannerRef) pannerRef.node = panner; // expose for live position updates
+
+  // Reverb send panner — half the pan amount so reverb stays somewhat wide
+  const reverbPanner = actx.createStereoPanner();
+  reverbPanner.pan.value = Math.max(-1, Math.min(1, pan * 0.5));
+  reverbPanner.connect(reverb);
+
   const dryG=actx.createGain(); dryG.gain.value=v*(1-dryWet);
   const wetG=actx.createGain(); wetG.gain.value=v*dryWet;
-  dryG.connect(masterLPF); wetG.connect(reverb);
+  dryG.connect(panner);       // dry: fully panned
+  wetG.connect(reverbPanner); // wet: half-panned — reverb stays wide but placed
   const preLPF=actx.createBiquadFilter(); preLPF.type='lowpass';
   preLPF.frequency.value=rand(1800,2600); preLPF.Q.value=0.5;
   preLPF.connect(dryG); preLPF.connect(wetG);
@@ -490,12 +501,25 @@ function scheduleMain() {
   const isRev = coin(0.12);
   const baseGap = rand(2.8,6.2);
   const gap = baseGap * pieceDensity;
-  const noteVol = rand(0.10,0.16);
+  const noteVol = rand(0.04, 0.22); // wider velocity range — pp to mf
   const noteDecay = rand(4.0,7.0);
   nextNoteT += gap;
-  playNote(ctx, f, nextNoteT, { reversed:isRev, dryWet:0.62, vol:noteVol, decay:noteDecay });
+  // Spawn orb first to get its position, then play note panned to that position
   const ms = Math.max(0,(nextNoteT-ctx.currentTime)*1000);
-  addTimer(()=>{ if(!playing) return; triggerPulse(isRev, noteVol, noteDecay); }, ms);
+  addTimer(()=>{
+    if(!playing) return;
+    // Y position from pitch, X random, velocity drives opacity+color vibrancy
+    const pitchY = PITCH_Y[name] !== undefined ? PITCH_Y[name] : 0.5;
+    const spawnY = pitchY + rand(-0.04, 0.04); // tiny variation around pitch lane
+    const orb = spawnButterfly({vol:noteVol, decay:noteDecay, rev:isRev, spawnY, velocity:noteVol});
+    if(orb && ctx) {
+      const pan = (orb.x * 2) - 1;
+      playNote(ctx, f, ctx.currentTime+0.05, {
+        reversed:isRev, dryWet:0.62, vol:noteVol, decay:noteDecay,
+        pan, pannerRef: orb.pannerRef
+      });
+    }
+  }, ms);
   addTimer(scheduleMain,(gap-1.4)*1000);
 }
 
@@ -596,12 +620,19 @@ btn.addEventListener('click',()=>{
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const trailCanvas=document.getElementById('trail-canvas'), tg=trailCanvas.getContext('2d');
-const fillCanvas=document.getElementById('fill-canvas'),   fg=fillCanvas.getContext('2d');
 const canvas=document.getElementById('c'), g=canvas.getContext('2d');
 let W,H;
 const resize=()=>{
-  W=canvas.width=trailCanvas.width=fillCanvas.width=window.innerWidth;
-  H=canvas.height=trailCanvas.height=fillCanvas.height=window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;      canvas.height = H * dpr;
+  trailCanvas.width = W * dpr; trailCanvas.height = H * dpr;
+  canvas.style.width = W + 'px';      canvas.style.height = H + 'px';
+  trailCanvas.style.width = W + 'px'; trailCanvas.style.height = H + 'px';
+  // Scale context so drawing coords stay in CSS pixels
+  g.scale(dpr, dpr);
+  tg.scale(dpr, dpr);
 };
 resize(); window.addEventListener('resize',resize);
 
@@ -650,24 +681,46 @@ const washes = Array.from({length:9},(_,wi)=>({
   phaseSpeed:rand(0.0002,0.0006)
 }));
 
+
+// ── Pitch → Y position mapping ────────────────────────────────────────────────
+// Lower notes appear lower on screen, higher notes appear higher
+// Maps each note name to a normalised Y position (0=top, 1=bottom)
+const PITCH_Y = {
+  G2:0.92, C3:0.86, G3:0.80, A3:0.76,
+  C4:0.70, D4:0.65, E4:0.60, F4:0.55,
+  G4:0.50, A4:0.44, B4:0.38,
+  C5:0.33, D5:0.28, E5:0.23, F5:0.19,
+  G5:0.14, A5:0.10, B5:0.06,
+};
+
 let butterflies=[];
 
 function spawnButterfly(opts={}) {
-  const {vol=rand(0.10,0.15), decay=rand(4,7), rev=false}=opts;
+  const {vol=rand(0.10,0.15), decay=rand(4,7), rev=false,
+         spawnY=rand(0.15,0.85), velocity=0.13}=opts;
   const baseSize = rand(10,18)*(0.7+vol*1.0);
+  const pannerRef = {node: null};
+  const velNorm = Math.max(0, Math.min(1, (velocity - 0.04) / 0.18));
+  const velOpacity = 0.15 + velNorm * 0.60;
+  const velVibrancy = 0.3 + velNorm * 0.7;
   butterflies.push({
-    x: rand(0.08, 0.92), y: rand(0.15, 0.85),
+    x: rand(0.08, 0.92), y: spawnY,
     speed: rand(0.00006, 0.00045),  // wide range — some drift, some zip
     angle: rand(0, Math.PI*2),
     angleV: rand(-0.00004, 0.00004),
     angleV2: rand(-0.000004, 0.000004),
     sinX:0, sinXSpeed:0, sinXAmp:0, sinY:0, sinYSpeed:0, sinYAmp:0,
     size: baseSize, opacity: 0,
-    targetOpacity: rand(0.28, 0.55),
+    targetOpacity: velOpacity,
+    vibrancy: velVibrancy,
+    // velocity drives max opacity
+    vibrancy: velVibrancy,            // velocity drives color vibrancy
     life: 1.0, decay: 0.00012 + (1/decay)*0.0001,
     rev, bias: rev ? rand(0.55,0.95) : rand(0.05,0.55),
     age: pieceAge, trail: [], trailMax: 280, mergeCount: 0,
+    pannerRef,  // live stereo position reference
   });
+  return butterflies[butterflies.length-1];
 }
 
 function spawnOrbAt(x, y, angle, opts={}) {
@@ -682,13 +735,21 @@ function spawnOrbAt(x, y, angle, opts={}) {
     rev, bias: rev ? rand(0.55,0.95) : rand(0.05,0.55),
     age: pieceAge, trail: [], trailMax: 280, mergeCount: 0,
     linkedAngleRef, linkedUntil: linkedAngleRef ? (Date.now()/1000 + 10) : 0,
+    pannerRef: {node: null},
   };
   butterflies.push(orb); return orb;
 }
 
 let pulses=[], chordBloom=false;
 
-function triggerPulse(rev=false, vol=0.13, decay=5){ spawnButterfly({vol, decay, rev}); }
+function triggerPulse(rev=false, vol=0.13, decay=5){
+  const orb = spawnButterfly({vol, decay, rev});
+  if(orb && ctx) {
+    // Pan = orb x position mapped to -1..1, played at next scheduled time
+    const pan = (orb.x * 2) - 1;
+    orb.pannerRef.pan = pan; // store initial pan
+  }
+}
 function triggerPolyOrb(){ spawnButterfly({vol:rand(0.05,0.08), decay:rand(2,4), rev:false}); }
 
 function triggerChordVisual(){
@@ -709,6 +770,11 @@ setInterval(()=>{ swellTarget=swellActive?rand(0.025,0.055)*swellIntensity:0; },
 
 let lastChordBloom=false, frame=0;
 
+// ── Projector artifacts ───────────────────────────────────────────────────────
+let flickerIntensity = 0;      // 0-1, drives brightness flash
+let flickerDecay = 0;
+
+
 function draw(){
   requestAnimationFrame(draw); frame++;
 
@@ -716,7 +782,6 @@ function draw(){
   if(!playing){
     g.clearRect(0,0,W,H);
     tg.clearRect(0,0,W,H);
-    fg.clearRect(0,0,W,H);
     g.fillStyle='rgba(252,248,240,1)'; g.fillRect(0,0,W,H);
     return;
   }
@@ -739,11 +804,13 @@ function draw(){
   else           { swellErase += (0-swellErase)*0.001; }
 
   const baseFade = breathPhase==='silence'?0.0014:0.0003;
-  const trailFade = baseFade + swellErase*0.016;
+  // Density regulator — count total trail length, increase erase when too dense
+  // This keeps the canvas at the sparse Japanese line-drawing quality
+  const totalTrailPts = butterflies.reduce((s,b) => s + b.trail.length, 0);
+  const densityPressure = Math.max(0, (totalTrailPts - 800) / 2000); // kicks in above 800pts
+  const trailFade = baseFade + swellErase*0.016 + densityPressure*0.004;
   if(frame%2===0){ tg.fillStyle=`rgba(${bgR},${bgG},${bgB},${trailFade})`; tg.fillRect(0,0,W,H); }
-  // (fill canvas removed)
 
-  // (seed fills removed)
 
   // Pearl ground
   g.fillStyle=`rgba(255,252,245,0.06)`; g.fillRect(0,0,W,H);
@@ -807,6 +874,28 @@ function draw(){
     g.fillStyle=tg3; g.beginPath(); g.arc(tx,ty,tr2,0,Math.PI*2); g.fill();
   }
 
+  // ── Projector flicker ────────────────────────────────────────────────────────
+  // Every ~8-15 seconds a flicker event — brightness dips then flashes
+  // Uses a slow decay so you actually see it last a few frames
+  if(coin(0.004) && flickerIntensity < 0.01){
+    // Randomly either a bright flash or a dim dip
+    flickerIntensity = coin(0.5) ? rand(0.12, 0.32) : rand(-0.08, -0.03);
+    flickerDecay = rand(0.04, 0.09); // slow decay — lasts ~10-20 frames
+  }
+  if(Math.abs(flickerIntensity) > 0.002){
+    if(flickerIntensity > 0){
+      // Bright flash — white wash
+      g.fillStyle=`rgba(255,252,245,${Math.min(flickerIntensity,0.99)})`;
+      g.fillRect(0,0,W,H);
+    } else {
+      // Dim dip — dark wash
+      g.fillStyle=`rgba(10,8,5,${Math.min(-flickerIntensity,0.99)})`;
+      g.fillRect(0,0,W,H);
+    }
+    flickerIntensity *= (1 - flickerDecay);
+  }
+
+
   // ── Orb movement ──
   for(let i=0;i<butterflies.length;i++){
     const b=butterflies[i];
@@ -827,6 +916,13 @@ function draw(){
     if(b.y >  1.08) b.y = -0.08;
     if(b.opacity < b.targetOpacity) b.opacity = Math.min(b.targetOpacity, b.opacity+0.008);
     b.life -= b.decay;
+    // Live stereo pan update — pan follows orb's x position in real time
+    if(b.pannerRef && b.pannerRef.node && playing) {
+      const targetPan = Math.max(-1, Math.min(1, (b.x * 2) - 1));
+      // Smooth pan movement — audio pan can't jump instantly
+      const currentPan = b.pannerRef.node.pan.value;
+      b.pannerRef.node.pan.value = currentPan + (targetPan - currentPan) * 0.05;
+    }
   }
 
   // ── Collision merging ──
@@ -884,12 +980,15 @@ function draw(){
     // Paintbrush stroke — connect last two trail points with a soft line
     if(b.trail.length > 1){
       const mc = b.mergeCount||0;
+      const vib = b.vibrancy || 0.5;
       const p0 = b.trail[b.trail.length-2];
       const p1 = b.trail[b.trail.length-1];
-      // Stroke width grows slightly with merge count — merged orbs leave broader strokes
-      const strokeW = Math.max(1.2, b.size * (0.18 + mc*0.08));
-      const tOp = Math.min(b.opacity * 0.32, 0.99);
-      const [r1,g1,b1t]=duskRGB(Math.max(0,b.bias-0.15), b.age);
+      const strokeW = Math.max(0.6, b.size * (0.14 + mc*0.06));
+      // Velocity drives opacity — quiet notes barely visible, loud notes vivid
+      const tOp = Math.min(b.opacity * (0.18 + vib * 0.32), 0.99);
+      // Velocity shifts color — quiet=desaturated/pale, loud=more saturated/shifted
+      const biasMod = b.bias + (vib - 0.5) * 0.18;
+      const [r1,g1,b1t]=duskRGB(Math.max(0,biasMod-0.15), b.age);
       tg.beginPath();
       tg.moveTo(p0.x*W, p0.y*H);
       tg.lineTo(p1.x*W, p1.y*H);
@@ -900,21 +999,7 @@ function draw(){
       tg.stroke();
     }
 
-    const px=b.x*W, py=b.y*H, sr=b.size;
-    const mc = b.mergeCount||0;
-    // Orb is just the soft wet tip of the brushstroke — wide and translucent
-    const spread = Math.min(1.0 + mc*0.3, 1.5);
-    const coreOp = Math.min(lifeOp * Math.max(0.12, 0.55 - mc*0.08), 0.99);
-    const edgeOp = 0;
-    const rad = sr * spread;
-    const og=g.createRadialGradient(px,py,sr*0.2,px,py,rad);
-    const [r1,g1,b1]=duskRGB(Math.max(0,b.bias-0.2), b.age);
-    const [r2,g2,b2]=duskRGB(Math.min(1,b.bias+0.25), b.age);
-    og.addColorStop(0,   `rgba(${r1},${g1},${b1},${coreOp})`);
-    og.addColorStop(0.5, `rgba(${r2},${g2},${b2},${Math.min(coreOp*0.4,0.99)})`);
-    og.addColorStop(1,   `rgba(${r2},${g2},${b2},0)`);
-    g.beginPath(); g.arc(px,py,rad,0,Math.PI*2);
-    g.fillStyle=og; g.fill();
+    // no orb head — trail only
   }
 }
 draw();

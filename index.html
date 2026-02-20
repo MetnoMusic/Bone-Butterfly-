@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bone Butterfly</title>
+<title>Afterglow</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -26,40 +25,73 @@
     background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.78) 100%);
     pointer-events:none; z-index:9;
   }
-  canvas { position:fixed; inset:0; width:100%; height:100%; z-index:1; }
-  .center {
-    position:relative; z-index:20; text-align:center;
-    display:flex; flex-direction:column; align-items:center; gap:1.8rem;
+  canvas { position:fixed; inset:0; width:100%; height:100%; }
+  #c { z-index:1; }
+  #fill-canvas { z-index:2; pointer-events:none; }
+  #trail-canvas { z-index:3; pointer-events:none; }
+
+  /* Play button — centred, fades out after playing starts, reappears on hover */
+  .btn-wrap {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:20; transition:opacity 3s ease; display:flex; flex-direction:column; align-items:center;
   }
-  .title { font-size:clamp(2.2rem,8vw,4.8rem); letter-spacing:0.18em; opacity:0.92; font-weight:normal; }
-  .subtitle { font-size:clamp(0.72rem,3vw,0.95rem); letter-spacing:0.45em; color:var(--warm); opacity:0.6; font-style:italic; text-transform:uppercase; }
+  .btn-wrap.hide { opacity:0; pointer-events:none; }
   .btn {
-    width:80px; height:80px; border-radius:50%;
+    width:72px; height:72px; border-radius:50%;
     border:1.5px solid rgba(200,169,122,0.4); background:transparent;
     display:flex; align-items:center; justify-content:center;
     cursor:pointer; transition:border-color 0.8s,transform 0.3s; position:relative;
   }
   .btn::before { content:''; position:absolute; inset:-8px; border-radius:50%; border:1px solid rgba(200,169,122,0.12); }
   .btn:hover { border-color:rgba(200,169,122,0.7); transform:scale(1.05); }
-  .note-indicator { font-size:clamp(0.9rem,3.5vw,1.2rem); letter-spacing:0.4em; color:var(--warm); opacity:0; transition:opacity 1.4s ease; min-height:1.8em; font-style:italic; }
-  .note-indicator.visible { opacity:0.45; }
-  .hint { font-size:0.68rem; letter-spacing:0.3em; color:var(--cream); opacity:0.22; text-transform:uppercase; transition:opacity 2s; }
+  .hint { font-size:0.62rem; letter-spacing:0.3em; color:var(--cream); opacity:0.22; text-transform:uppercase; margin-top:0.7rem; }
+
+  /* Bottom left — title + note indicator */
+  .corner {
+    position:fixed; bottom:2rem; left:2rem;
+    z-index:20; display:flex; flex-direction:column; gap:0.4rem;
+  }
+  .title-row { display:flex; align-items:baseline; gap:0.7em; }
+  .stop-btn {
+    background:none; border:none; cursor:pointer; padding:0;
+    font-family:'IM Fell English',serif; font-style:italic;
+    font-size:clamp(0.9rem,2.5vw,1.3rem); letter-spacing:0.15em;
+    color:var(--warm); opacity:0; pointer-events:none;
+    transition:opacity 2s ease;
+  }
+  .stop-btn.visible { opacity:0.45; pointer-events:all; }
+  .stop-btn:hover { opacity:0.75 !important; }
+  .note-indicator { font-size:clamp(0.7rem,2vw,0.9rem); letter-spacing:0.45em; color:var(--warm); opacity:0; transition:opacity 1.4s ease; font-style:italic; min-height:1.1em; }
+  .note-indicator.visible { opacity:0.55; }
+  .title { font-size:clamp(0.9rem,2.5vw,1.3rem); letter-spacing:0.2em; opacity:0.55; font-weight:normal; }
 </style>
 </head>
 <body>
+<canvas id="trail-canvas"></canvas>
+<canvas id="fill-canvas"></canvas>
 <canvas id="c"></canvas>
-<div class="center">
-  <p class="subtitle">a piece for many listeners</p>
-  <h1 class="title">Bone Butterfly</h1>
+
+<!-- Centred play button — fades after playing -->
+<div class="btn-wrap" id="btnWrap">
   <button class="btn" id="playBtn" aria-label="Play">
     <svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"><polygon points="5,3 19,12 5,21"/></svg>
   </button>
-  <div class="note-indicator" id="noteDisp"></div>
   <p class="hint" id="hint">tap to begin</p>
 </div>
 
+<!-- Bottom left — note name above title -->
+<div class="corner">
+  <div class="note-indicator" id="noteDisp"></div>
+  <div class="title-row">
+    <h1 class="title">Afterglow</h1>
+    <button class="stop-btn" id="stopBtn">stop</button>
+  </div>
+</div>
+
 <script>
+
 const rand = (a,b) => a + Math.random()*(b-a);
+const randInt = (a,b) => Math.floor(rand(a,b+1));
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 const coin = p => Math.random() < p;
 
@@ -380,7 +412,7 @@ function playPolyLayer(actx, ratio, pulseLen, startT) {
   const step=(pulseLen*4)/ratio;
   for(let i=0;i<ratio;i++){
     const name=pick(MELODY); const f=MIX[name];
-    playNote(actx,f,startT+i*step,{vol:rand(0.04,0.07),decay:rand(1.8,3.0),quiet:true,dryWet:0.72});
+    playNote(actx,f,startT+i*step,{vol:rand(0.07,0.11),decay:rand(2.0,3.5),quiet:false,dryWet:0.72});
   }
 }
 
@@ -459,20 +491,18 @@ function scheduleMain() {
   const name = pickMelodyNote();
   const f = MIX[name];
   const isRev = coin(0.12);
-  // Gap modulated by breath phase density
   const baseGap = rand(2.8,6.2);
   const gap = baseGap * pieceDensity;
+  const noteVol = rand(0.10,0.16);
+  const noteDecay = rand(4.0,7.0);
   nextNoteT += gap;
 
-  playNote(ctx, f, nextNoteT, { reversed:isRev, dryWet:0.62 });
+  playNote(ctx, f, nextNoteT, { reversed:isRev, dryWet:0.62, vol:noteVol, decay:noteDecay });
 
   const ms = Math.max(0,(nextNoteT-ctx.currentTime)*1000);
   addTimer(()=>{
     if(!playing) return;
-    noteDisp.textContent = isRev ? `↩ ${name.replace(/\d/,'')}` : name.replace(/\d/,'');
-    noteDisp.classList.add('visible');
-    addTimer(()=>noteDisp.classList.remove('visible'),2200);
-    triggerPulse(isRev);
+    triggerPulse(isRev, noteVol, noteDecay);
   },ms);
 
   addTimer(scheduleMain,(gap-1.4)*1000);
@@ -481,10 +511,10 @@ function scheduleMain() {
 // ── Chord bloom scheduler ─────────────────────────────────────────────────────
 function scheduleChordBloom() {
   if(!playing||!ctx) return;
-  const wait = rand(8000,18000); // every 8-18 seconds
+  const wait = rand(12000,22000); // every 12-22 seconds
   addTimer(()=>{
     if(!playing||!ctx) return;
-    if(recentNotes.length >= 2) bloomChord(ctx);
+    if([...new Set(recentNotes)].length >= 4) bloomChord(ctx);
     scheduleChordBloom();
   }, wait);
 }
@@ -499,6 +529,8 @@ function schedulePolyrhythm() {
       const t0=ctx.currentTime+0.5;
       playPolyLayer(ctx,ratio,pulse,t0);
       playPolyLayer(ctx,ratio,pulse,t0+pulse*4+rand(0.5,1.5));
+      // Spawn an orb for each poly note
+      for(let pi=0;pi<ratio;pi++) setTimeout(triggerPolyOrb, pi*(pulse*4/ratio)*1000);
     }
     schedulePolyrhythm();
   }, rand(20000,45000));
@@ -518,17 +550,41 @@ function scheduleOceanSwell() {
 function startMusic() {
   ctx = new (window.AudioContext||window.webkitAudioContext)();
   reverb = buildReverb(ctx);
+
+  // Master limiter — hard ceiling, prevents any clipping
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -3;   // kicks in just below 0dB
+  limiter.knee.value = 0;         // hard knee — true limiting
+  limiter.ratio.value = 20;       // heavy ratio — acts as a brick wall
+  limiter.attack.value = 0.001;   // very fast attack — catches transients
+  limiter.release.value = 0.1;
+  limiter.connect(ctx.destination);
+
+  // Master compressor — gentle glue across the whole mix
+  const compressor = ctx.createDynamicsCompressor();
+  compressor.threshold.value = -18;  // gentle, starts working early
+  compressor.knee.value = 10;        // soft knee — transparent
+  compressor.ratio.value = 3;        // gentle ratio — just glue, not pumping
+  compressor.attack.value = 0.02;
+  compressor.release.value = 0.4;
+  compressor.connect(limiter);
+
+  // Master gain — pull overall level down slightly so compressor has headroom
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0.7;
+  masterGain.connect(compressor);
+
   masterLPF = ctx.createBiquadFilter();
   masterLPF.type='lowpass'; masterLPF.frequency.value=5500; masterLPF.Q.value=0.4;
-  // Slowly breathe the master filter
   masterLPF.frequency.setValueAtTime(5500,ctx.currentTime);
   masterLPF.frequency.linearRampToValueAtTime(3800,ctx.currentTime+90);
   masterLPF.frequency.linearRampToValueAtTime(5000,ctx.currentTime+180);
-  masterLPF.connect(ctx.destination);
-  reverb.connect(ctx.destination);
+  masterLPF.connect(masterGain);
+  reverb.connect(masterGain);
 
   nextNoteT = ctx.currentTime+0.8;
   breathPhase='building'; pieceDensity=1.0;
+  pieceStartTime = Date.now();
   scheduleMain();
   scheduleChordBloom();
   schedulePolyrhythm();
@@ -545,107 +601,497 @@ function stopMusic() {
 }
 
 const btn=document.getElementById('playBtn');
+const btnWrap=document.getElementById('btnWrap');
+const stopBtn=document.getElementById('stopBtn');
+let btnHideTimer=null;
+
+stopBtn.addEventListener('click',()=>{
+  playing=false;
+  stopMusic();
+  stopBtn.classList.remove('visible');
+  butterflies.length=0;
+  btnWrap.style.display='flex';
+  btnWrap.style.opacity='1';
+  document.getElementById('btnIcon').outerHTML=`<svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"><polygon points="5,3 19,12 5,21"/></svg>`;
+  document.getElementById('hint').style.opacity='0.22';
+});
+
 btn.addEventListener('click',()=>{
   playing=!playing;
   if(playing){
     startMusic();
     document.getElementById('btnIcon').outerHTML=`<svg id="btnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a97a" stroke-width="2.2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
     document.getElementById('hint').style.opacity='0';
+    // Fade button out after 4 seconds
+    btnHideTimer = setTimeout(()=>{ btnWrap.style.display='none'; }, 2000);
+    setTimeout(()=>{ if(playing) document.getElementById('stopBtn').classList.add('visible'); }, 20000);
   } else {
     stopMusic();
+    clearTimeout(btnHideTimer);
+    btnWrap.classList.remove('hide');
     document.getElementById('btnIcon').outerHTML=`<svg id="btnIcon" width="22" height="22" viewBox="0 0 24 24" fill="#c8a97a"><polygon points="5,3 19,12 5,21"/></svg>`;
   }
 });
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
+const trailCanvas=document.getElementById('trail-canvas'), tg=trailCanvas.getContext('2d');
+const fillCanvas=document.getElementById('fill-canvas'),   fg=fillCanvas.getContext('2d');
 const canvas=document.getElementById('c'), g=canvas.getContext('2d');
 let W,H;
-const resize=()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;};
+const resize=()=>{
+  W=canvas.width=trailCanvas.width=fillCanvas.width=window.innerWidth;
+  H=canvas.height=trailCanvas.height=fillCanvas.height=window.innerHeight;
+};
 resize(); window.addEventListener('resize',resize);
 
-const particles=Array.from({length:70},()=>({
-  x:Math.random(),y:Math.random(),size:rand(0.4,2.2),
-  speed:rand(0.00006,0.00022),angle:rand(0,Math.PI*2),
-  opacity:rand(0.03,0.11),drift:rand(-0.0002,0.0002)
-}));
-const threads=Array.from({length:10},()=>({
-  x:Math.random(),y:rand(0.1,0.9),len:rand(0.06,0.20),
-  speed:rand(0.00003,0.00008),opacity:rand(0.02,0.055),angle:rand(-0.12,0.12)
-}));
+// ── Dusk palette ──────────────────────────────────────────────────────────────
+let pieceAge=0, pieceStartTime=null;
+let hueShift=0;        // 0-1, cycles through full colour wheel slowly
+let hueTarget=0;       // target hue — swell pushes this toward blue/purple
 
-let pulses=[], chordBloom=false;
-function triggerPulse(rev=false){
-  pulses.push({r:0,maxR:rand(90,200),opacity:rand(0.10,0.20),speed:rand(0.3,0.7),rev});
-  if(coin(0.3)) pulses.push({r:0,maxR:rand(30,80),opacity:rand(0.06,0.12),speed:rand(0.6,1.2),rev:false});
+// Returns [r,g,b] interpolated through dusk palette based on piece age
+// Full sunset wheel — 8 stops covering gold→yellow→coral→pink→violet→blue→indigo→back
+const WHEEL = [
+  {r:248,g:195,b: 95},  // 0.00 warm gold
+  {r:252,g:220,b:110},  // 0.12 pale yellow
+  {r:245,g:168,b:105},  // 0.25 amber orange
+  {r:238,g:128,b:138},  // 0.37 coral pink
+  {r:210,g:115,b:175},  // 0.50 rose violet
+  {r:165,g:128,b:215},  // 0.62 soft purple
+  {r:118,g:145,b:225},  // 0.75 periwinkle blue
+  {r:105,g:175,b:210},  // 0.87 sky teal
+  {r:248,g:195,b: 95},  // 1.00 back to gold (loop)
+];
+
+function wheelRGB(hue) {
+  // hue 0-1 cycles through full WHEEL
+  const h = ((hue % 1.0) + 1.0) % 1.0;
+  const seg = h * (WHEEL.length-1);
+  const i = Math.min(Math.floor(seg), WHEEL.length-2);
+  const s = seg - i;
+  const a=WHEEL[i], b2=WHEEL[i+1];
+  return [
+    Math.round(a.r+(b2.r-a.r)*s),
+    Math.round(a.g+(b2.g-a.g)*s),
+    Math.round(a.b+(b2.b-a.b)*s)
+  ];
 }
 
-// Chord bloom triggers large slow expanding ring
+function duskRGB(bias, age) {
+  // bias 0-1 shifts hue; age slowly drifts base hue; hueShift applied globally
+  const baseHue = hueShift + bias * 0.28;
+  const [r,gv,bv] = wheelRGB(baseHue);
+  return [Math.max(0,Math.min(255,r)), Math.max(0,Math.min(255,gv)), Math.max(0,Math.min(255,bv))];
+}
+function dc(bias, opacity, age){ const [r,gv,b]=duskRGB(bias,age); return `rgba(${r},${gv},${b},${Math.min(Math.max(opacity,0),0.99)})`; }
+
+// ── Watercolour wash layers ───────────────────────────────────────────────────
+// Several large soft blobs that slowly drift — give the watercolour feel
+// ── Voronoi color seeds ────────────────────────────────────────────────────────
+const seeds = Array.from({length:18},(_,si)=>({
+  x: rand(0.02, 0.98), y: rand(0.02, 0.98),
+  vx: rand(-0.000025, 0.000025), vy: rand(-0.000020, 0.000020),
+  hue: si/18,
+  hueSpeed: rand(0.000025, 0.000065),
+  opacity: 0, targetOp: rand(0.045, 0.085),
+  phase: rand(0, Math.PI*2), phaseSpeed: rand(0.0003, 0.0008),
+}));
+
+const washes = Array.from({length:9},()=>({
+  x:rand(0.0,1.0), y:rand(0.0,1.0),
+  vx:rand(-0.00004,0.00004), vy:rand(-0.00003,0.00003),
+  r:rand(0.32,0.62),
+  bias:rand(0,1),
+  opacity:rand(0.028,0.058),
+  opacityActual:0,  // fades in to avoid pop
+  phase:rand(0,Math.PI*2),
+  phaseSpeed:rand(0.0002,0.0006)
+}));
+
+// ── Orbs ──────────────────────────────────────────────────────────────────────
+// One orb per note — floats in organic arcs, lingers, fills screen over time
+let butterflies=[];
+
+function spawnButterfly(opts={}) {
+  const {vol=rand(0.10,0.15), decay=rand(4,7), rev=false}=opts;
+  const baseSize = rand(10,18)*(0.7+vol*1.0);  // larger, crisper at birth
+  butterflies.push({
+    x: rand(0.08, 0.92),
+    y: rand(0.15, 0.85),
+    // Wide roaming arcs — slow turn rate so orb travels far before curving
+    speed: rand(0.00012, 0.00022),       // slow enough that trail dots overlap smoothly
+    angle: rand(0, Math.PI*2),
+    angleV: rand(-0.00004, 0.00004),     // near-straight — arc radius spans whole canvas
+    angleV2: rand(-0.000004, 0.000004),  // almost zero drift
+    sinX: 0, sinXSpeed: 0, sinXAmp: 0,  // no local wiggle overlays
+    sinY: 0, sinYSpeed: 0, sinYAmp: 0,  // — they caused the scribbling
+    size: baseSize,
+    opacity: 0,
+    targetOpacity: rand(0.28, 0.55),
+    life: 1.0,
+    decay: 0.00012 + (1/decay)*0.0001,
+    rev,
+    bias: rev ? rand(0.55,0.95) : rand(0.05,0.55),
+    age: pieceAge,
+    trail: [],
+    trailMax: 280,
+    mergeCount: 0,      // how many times this orb has merged — loses self each time
+  });
+}
+
+// ── Triggers ──────────────────────────────────────────────────────────────────
+
+// ── Spawn orb at specific position/angle ──────────────────────────────────────
+function spawnOrbAt(x, y, angle, opts={}) {
+  const {vol=rand(0.10,0.15), decay=rand(4,7), rev=false, linkedAngleRef=null}=opts;
+  const baseSize = rand(10,18)*(0.7+vol*1.0);
+  const orb = {
+    x, y,
+    speed: rand(0.00012, 0.00022),
+    angle,
+    angleV: rand(-0.00004, 0.00004),
+    angleV2: rand(-0.000004, 0.000004),
+    sinX:0, sinXSpeed:0, sinXAmp:0,
+    sinY:0, sinYSpeed:0, sinYAmp:0,
+    size: baseSize,
+    opacity: 0,
+    targetOpacity: rand(0.28, 0.55),
+    life: 1.0,
+    decay: 0.00012 + (1/decay)*0.0001,
+    rev,
+    bias: rev ? rand(0.55,0.95) : rand(0.05,0.55),
+    age: pieceAge,
+    trail: [],
+    trailMax: 280,
+    mergeCount: 0,
+    linkedAngleRef,   // if set, share angle with sibling orbs for 10s
+    linkedUntil: linkedAngleRef ? (Date.now()/1000 + 10) : 0,
+  };
+  butterflies.push(orb);
+  return orb;
+}
+
+let pulses=[], chordBloom=false;
+
+function triggerPulse(rev=false, vol=0.13, decay=5){
+  spawnButterfly({vol, decay, rev});
+}
+
+function triggerPolyOrb(){
+  // Poly rhythm notes each get their own small quiet orb
+  spawnButterfly({vol:rand(0.05,0.08), decay:rand(2,4), rev:false});
+}
+
 function triggerChordVisual(){
-  for(let i=0;i<4;i++){
-    setTimeout(()=>{
-      pulses.push({r:i*15,maxR:rand(200,350),opacity:rand(0.05,0.12),speed:rand(0.15,0.35),rev:false,chord:true});
-    },i*600);
+  chordBloomAlpha = 0.06;
+  // Spawn 3 orbs close together, same starting angle — they fly in formation
+  // then slowly diverge as their individual angleV takes over after 10s
+  const sharedAngle = rand(0, Math.PI*2);
+  const cx = rand(0.25, 0.75), cy = rand(0.25, 0.75);
+  const angleRef = {angle: sharedAngle}; // shared mutable reference
+  const spread = 0.04;
+  for(let i=0;i<3;i++){
+    const ox = cx + (i-1)*spread*Math.cos(sharedAngle + Math.PI*0.5);
+    const oy = cy + (i-1)*spread*Math.sin(sharedAngle + Math.PI*0.5);
+    const orb = spawnOrbAt(ox, oy, sharedAngle, {
+      vol:rand(0.07,0.11), decay:rand(8,14), rev:false,
+      linkedAngleRef: angleRef
+    });
   }
 }
 
-let swellAlpha=0,swellTarget=0;
-setInterval(()=>{ swellTarget=swellActive?rand(0.03,0.07)*swellIntensity:0; },1500);
+let swellAlpha=0, swellTarget=0;
+let chordBloomAlpha=0;
+let swellErase=0;       // 0-1, drives trail canvas clearing during swell
+let prevSwellActive=false;
+setInterval(()=>{ swellTarget=swellActive?rand(0.025,0.055)*swellIntensity:0; },1500);
 
-// Watch for chord blooms to trigger visuals
-let lastChordBloom=false;
-let frame=0;
+let lastChordBloom=false, frame=0;
+
 function draw(){
   requestAnimationFrame(draw); frame++;
   if(chordBloom&&!lastChordBloom) triggerChordVisual();
   lastChordBloom=chordBloom;
+  if(pieceStartTime) pieceAge=(Date.now()-pieceStartTime)/1000;
+  // Hue slowly cycles on its own; pink noise swell pushes toward blue-violet range
+  hueShift += 0.000035;  // full cycle in ~8 minutes — always changing
+  if(swellAlpha > 0.01){
+    // Swell nudges hue toward blue-purple zone (0.6-0.75 on wheel)
+    const swellHue = 0.62 + Math.sin(pieceAge*0.08)*0.08;
+    hueShift += (swellHue - ((hueShift%1+1)%1)) * swellAlpha * 0.008;
+  }
 
-  swellAlpha+=(swellTarget-swellAlpha)*0.003;
-  g.fillStyle='rgba(26,20,16,0.15)'; g.fillRect(0,0,W,H);
+  swellAlpha += (swellTarget-swellAlpha)*0.003;
+  chordBloomAlpha *= 0.985; // fade out chord bloom wash
 
+  // ── Plaster ground ───────────────────────────────────────────────────────────
+  // Pearl white base — the gesso ground everything glazes over
+  // Very low alpha so it accumulates slowly, giving depth not flatness
+  const t = Math.min(pieceAge/320,1);
+  const bgR=Math.round(255-t*8), bgG=Math.round(250-t*10), bgB=Math.round(242-t*6);
+
+  // Swell erase
+  if(swellActive){
+    swellErase += (Math.min(swellIntensity*0.85,0.92)-swellErase)*0.003;
+  } else {
+    swellErase += (0-swellErase)*0.001;
+  }
+  const baseFade = breathPhase==='silence'?0.0014:0.0003;
+  const trailFade = baseFade + swellErase*0.016;
+  if(frame%2===0){ tg.fillStyle=`rgba(${bgR},${bgG},${bgB},${trailFade})`; tg.fillRect(0,0,W,H); }
+  // Fill canvas fades slightly faster so color shifts stay fresh
+  const fillFade = baseFade*0.6 + swellErase*0.012;
+  if(frame%4===0){ fg.fillStyle=`rgba(${bgR},${bgG},${bgB},${Math.min(fillFade,0.99)})`; fg.fillRect(0,0,W,H); }
+
+  // ── Enclosed region detection — run worker periodically ─────────────────────
+  // ── Voronoi seed region fills ────────────────────────────────────────────────
+  // Each seed paints its own color pool onto fill canvas every 2 frames
+  // Trail lines sit on top acting as dividers — each gap between trails
+  // accumulates a different color from its nearest seed
+  if(frame%2===0){
+    for(const s of seeds){
+      s.x += s.vx; s.y += s.vy;
+      if(s.x<0) s.x=1; if(s.x>1) s.x=0;
+      if(s.y<0) s.y=1; if(s.y>1) s.y=0;
+      s.hue = (s.hue + s.hueSpeed) % 1;
+      s.phase += s.phaseSpeed;
+      s.opacity += (s.targetOp - s.opacity) * 0.005;
+
+      // Radius = half distance to nearest neighbour so colors don't bleed together
+      let minDist = 1e9;
+      for(const s2 of seeds){
+        if(s2===s) continue;
+        const dx=(s.x-s2.x)*W, dy=(s.y-s2.y)*H;
+        minDist = Math.min(minDist, Math.sqrt(dx*dx+dy*dy));
+      }
+      const paintR = Math.min(minDist*0.68, Math.min(W,H)*0.42);
+      const pulse  = 1 + Math.sin(s.phase)*0.07;
+      const r0     = paintR * pulse;
+      const sOp    = Math.min(s.opacity*(0.85+Math.sin(s.phase*1.3)*0.15), 0.99);
+      const [sr,sgv,sb]   = duskRGB(s.hue, pieceAge);
+      const [sr2,sgv2,sb2]= duskRGB((s.hue+0.14)%1, pieceAge);
+      const sfg = fg.createRadialGradient(s.x*W, s.y*H, 0, s.x*W, s.y*H, r0);
+      sfg.addColorStop(0,    `rgba(${sr},${sgv},${sb},${Math.min(sOp*0.82,0.99)})`);
+      sfg.addColorStop(0.42, `rgba(${sr2},${sgv2},${sb2},${Math.min(sOp*0.38,0.99)})`);
+      sfg.addColorStop(0.78, `rgba(${sr2},${sgv2},${sb2},${Math.min(sOp*0.06,0.99)})`);
+      sfg.addColorStop(1,    'transparent');
+      fg.beginPath(); fg.arc(s.x*W, s.y*H, r0, 0, Math.PI*2);
+      fg.fillStyle=sfg; fg.fill();
+    }
+  }
+
+  // Pearl ground — very thin semi-opaque white coat, like primer beneath glazes
+  // Keeps surface luminous no matter how many colour layers sit on top
+  g.fillStyle=`rgba(255,252,245,0.06)`; g.fillRect(0,0,W,H);
+
+  // ── Glaze layer 1 — large slow base field, full canvas tint ──────────────────
+  // Like the first broad colour wash on fresh plaster — sets the room tone
+  {
+    const fieldBias = (hueShift+0.1)%1;
+    const [fr,fg,fb] = duskRGB(fieldBias, pieceAge);
+    g.fillStyle=`rgba(${fr},${fg},${fb},0.028)`; g.fillRect(0,0,W,H);
+  }
+
+  // ── Glaze layer 2 — wash blobs, each a separate pigment pool ─────────────────
+  // Multiple translucent passes, like successive trowel applications of tinted plaster
+  for(const w of washes){
+    w.x+=w.vx; w.y+=w.vy; w.phase+=w.phaseSpeed;
+    if(w.x<-0.5)w.x=1.5; if(w.x>1.5)w.x=-0.5;
+    if(w.y<-0.5)w.y=1.5; if(w.y>1.5)w.y=-0.5;
+    w.opacityActual = (w.opacityActual||0)+(w.opacity-(w.opacityActual||0))*0.003;
+    w.bias = ((w.bias||0)+(w.biasDrift||0)+1.0)%1.0;
+    const pulse=1+Math.sin(w.phase)*0.06;
+    const rPx=(w.r*Math.max(W,H)*1.1)*pulse; // larger than screen — no hard edges
+    const wg=g.createRadialGradient(w.x*W,w.y*H,0,w.x*W,w.y*H,rPx);
+    const op=Math.min(w.opacityActual*(0.9+Math.sin(w.phase*1.3)*0.1)+swellAlpha*0.18,0.99);
+    const [r1,g1,b1]=duskRGB(w.bias, pieceAge);
+    const [r2,g2,b2]=duskRGB((w.bias+0.15)%1, pieceAge);
+    // Three stops — inner pigment, mid blend, fully transparent edge
+    // This gives the colour depth and translucency of real glazed plaster
+    wg.addColorStop(0,    `rgba(${r1},${g1},${b1},${Math.min(op*0.85,0.99)})`);
+    wg.addColorStop(0.4,  `rgba(${r2},${g2},${b2},${Math.min(op*0.38,0.99)})`);
+    wg.addColorStop(0.75, `rgba(${r2},${g2},${b2},${Math.min(op*0.08,0.99)})`);
+    wg.addColorStop(1,    'transparent');
+    g.fillStyle=wg; g.fillRect(0,0,W,H);
+  }
+
+  // ── Glaze layer 3 — swell chromatic shift ────────────────────────────────────
   if(swellAlpha>0.003){
-    const gr=g.createRadialGradient(W/2,H*0.65,0,W/2,H/2,W*0.8);
-    gr.addColorStop(0,`rgba(60,95,118,${swellAlpha*2.5})`);
-    gr.addColorStop(0.5,`rgba(40,70,90,${swellAlpha})`);
-    gr.addColorStop(1,'transparent');
-    g.fillStyle=gr; g.fillRect(0,0,W,H);
+    const sg=g.createLinearGradient(0,H,W,0); // diagonal — more interesting than radial
+    sg.addColorStop(0,   dc(0.68, Math.min(swellAlpha*0.9,0.99), pieceAge));
+    sg.addColorStop(0.5, dc(0.52, Math.min(swellAlpha*0.5,0.99), pieceAge));
+    sg.addColorStop(1,   'transparent');
+    g.fillStyle=sg; g.fillRect(0,0,W,H);
   }
 
-  // Chord bloom ambient glow
-  if(chordBloom){
-    const cg=g.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.55);
-    cg.addColorStop(0,`rgba(180,155,100,0.04)`);
-    cg.addColorStop(1,'transparent');
-    g.fillStyle=cg; g.fillRect(0,0,W,H);
+  // ── Specular sheen — the burnished gloss ─────────────────────────────────────
+  // Slow moving highlight — like light catching a polished plastered wall
+  // Gives that sense of looking INTO the surface not just AT it
+  {
+    const sx = 0.5+Math.sin(pieceAge*0.04)*0.35;
+    const sy = 0.3+Math.cos(pieceAge*0.028)*0.25;
+    const sheenR=Math.min(W,H)*0.7;
+    const sheenOp=0.04+Math.sin(pieceAge*0.06)*0.02;
+    const sg2=g.createRadialGradient(sx*W,sy*H,0,sx*W,sy*H,sheenR);
+    sg2.addColorStop(0,   `rgba(255,252,248,${Math.min(sheenOp*2,0.99)})`);
+    sg2.addColorStop(0.3, `rgba(255,250,245,${Math.min(sheenOp,0.99)})`);
+    sg2.addColorStop(1,   'transparent');
+    g.fillStyle=sg2; g.fillRect(0,0,W,H);
   }
 
-  for(const t of threads){
-    t.x+=t.speed; if(t.x>1.2)t.x=-0.2;
-    g.beginPath(); g.moveTo(t.x*W,t.y*H); g.lineTo((t.x+t.len)*W,(t.y+t.angle)*H);
-    g.strokeStyle=`rgba(200,169,122,${t.opacity})`; g.lineWidth=rand(0.2,0.7); g.stroke();
-  }
-  for(const p of particles){
-    p.angle+=p.drift; p.x+=Math.cos(p.angle)*p.speed; p.y+=Math.sin(p.angle)*p.speed*0.5;
-    if(p.x<-0.05)p.x=1.05; if(p.x>1.05)p.x=-0.05;
-    if(p.y<-0.05)p.y=1.05; if(p.y>1.05)p.y=-0.05;
-    g.beginPath(); g.arc(p.x*W,p.y*H,p.size,0,Math.PI*2);
-    g.fillStyle=`rgba(200,169,122,${p.opacity})`; g.fill();
-  }
+  // ── Micro texture — fine surface grain like burnished mineral plaster ─────────
+  // Very subtle random variation, gives material feel not digital smoothness
   if(frame%3===0){
-    g.beginPath(); g.moveTo(rand(0,W*0.6),rand(0,H)); g.lineTo(rand(W*0.3,W),rand(0,H));
-    g.strokeStyle=`rgba(200,169,122,${rand(0.006,0.025)})`; g.lineWidth=rand(0.2,0.8); g.stroke();
+    const tx=rand(0,W), ty=rand(0,H), tr2=rand(8,35);
+    const tg3=g.createRadialGradient(tx,ty,0,tx,ty,tr2);
+    const [tr,tgv,tb]=duskRGB(rand(0,1), pieceAge);
+    tg3.addColorStop(0,   `rgba(${tr},${tgv},${tb},${rand(0.008,0.028)})`);
+    tg3.addColorStop(1,   'transparent');
+    g.fillStyle=tg3; g.beginPath(); g.arc(tx,ty,tr2,0,Math.PI*2); g.fill();
   }
-  for(let i=pulses.length-1;i>=0;i--){
-    const p=pulses[i]; p.r+=p.speed; p.opacity-=p.chord?0.0005:0.0014;
-    if(p.opacity<=0||p.r>p.maxR){pulses.splice(i,1);continue;}
-    g.beginPath(); g.arc(W/2,H/2,p.r*(W/320),0,Math.PI*2);
-    g.strokeStyle=p.chord
-      ? `rgba(210,185,130,${p.opacity})`
-      : p.rev?`rgba(138,180,200,${p.opacity})`:`rgba(200,169,122,${p.opacity})`;
-    g.lineWidth=p.chord?1.5:1; g.stroke();
+
+  // ── Orb movement ──
+  for(let i=0;i<butterflies.length;i++){
+    const b=butterflies[i];
+    b.angleV += b.angleV2;
+    b.angleV = Math.max(-0.00045, Math.min(0.00045, b.angleV));
+    if(b.merging) continue; // merge animation handles position
+    // If linked to siblings, share angle for first 10 seconds
+    if(b.linkedAngleRef && b.linkedUntil > Date.now()/1000){
+      b.angle = b.linkedAngleRef.angle + rand(-0.002,0.002); // tiny jitter so not identical
+      b.linkedAngleRef.angle += b.angleV; // one of them drives the shared angle
+    } else {
+      b.angle += b.angleV;
+    }
+    b.sinX   += b.sinXSpeed;
+    b.sinY   += b.sinYSpeed;
+    b.x += Math.cos(b.angle)*b.speed;
+    b.y += Math.sin(b.angle)*b.speed;
+    // Record trail every frame for smooth continuous line
+    b.trail.push({x:b.x, y:b.y});
+    if(b.trail.length > b.trailMax) b.trail.shift();
+    // Soft wraparound — orbs drift off one edge and reappear on the other
+    // But fade out before crossing and fade back in so it's not jarring
+    if(b.x < -0.08) b.x = 1.08;
+    if(b.x >  1.08) b.x = -0.08;
+    if(b.y < -0.08) b.y = 1.08;
+    if(b.y >  1.08) b.y = -0.08;
+    if(b.opacity < b.targetOpacity) b.opacity = Math.min(b.targetOpacity, b.opacity+0.008);
+    b.life -= b.decay;
+  }
+
+  // ── Collision merging — fluid animated approach ──
+  for(let i=butterflies.length-1;i>=1;i--){
+    for(let j=i-1;j>=0;j--){
+      const a=butterflies[i], b=butterflies[j];
+      if(!a||!b) continue;
+      if(a.merging||b.merging) continue; // already in a merge
+      const dx=(a.x-b.x)*W, dy=(a.y-b.y)*H;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const combined=a.size+b.size;
+      if(dist < combined*0.85){
+        // Determine survivor (larger) and absorbed (smaller)
+        const [surv, gone] = a.size>=b.size ? [b,a] : [a,b];
+        const ti = butterflies.indexOf(gone);
+        // Mark survivor to grow toward final merged state
+        const ts=surv.size*surv.size, tg=gone.size*gone.size, total=ts+tg;
+        surv.mergeTargetSize = Math.min(Math.sqrt(total), 38);
+        surv.mergeTargetX    = (surv.x*ts + gone.x*tg)/total;
+        surv.mergeTargetY    = (surv.y*ts + gone.y*tg)/total;
+        surv.mergeTargetOp   = Math.min((surv.targetOpacity*ts+gone.targetOpacity*tg)/total, 0.62);
+        surv.merging         = true;
+        surv.mergeSpeed      = 0.035; // lerp speed — ~1.5s to complete
+        surv.life            = Math.max(surv.life, gone.life);
+        surv.bias            = (surv.bias*ts+gone.bias*tg)/total;
+        surv.age             = Math.min(surv.age, gone.age);
+        surv.trail           = [...gone.trail,...surv.trail].slice(-surv.trailMax);
+        surv.mergeCount      = (surv.mergeCount||0)+(gone.mergeCount||0)+1;
+        if(ti>-1) butterflies.splice(ti,1);
+        break;
+      }
+    }
+  }
+
+  // ── Animate merging orbs toward their target ──
+  for(const b of butterflies){
+    if(!b.merging) continue;
+    // Target curves forward — angleV still applied so merge path bends naturally
+    b.angle += b.angleV;
+    b.mergeTargetX += Math.cos(b.angle)*b.speed;
+    b.mergeTargetY += Math.sin(b.angle)*b.speed;
+    b.mergeTargetX = Math.max(0.02, Math.min(0.98, b.mergeTargetX));
+    b.mergeTargetY = Math.max(0.02, Math.min(0.98, b.mergeTargetY));
+    b.x    += (b.mergeTargetX    - b.x)    * b.mergeSpeed;
+    b.y    += (b.mergeTargetY    - b.y)    * b.mergeSpeed;
+    b.size += (b.mergeTargetSize - b.size) * b.mergeSpeed;
+    b.targetOpacity += (b.mergeTargetOp - b.targetOpacity) * b.mergeSpeed;
+    // Once close enough, snap and release
+    if(Math.abs(b.size-b.mergeTargetSize)<0.3 &&
+       Math.abs(b.x-b.mergeTargetX)<0.002 &&
+       Math.abs(b.y-b.mergeTargetY)<0.002){
+      b.size=b.mergeTargetSize;
+      b.merging=false;
+    }
+  }
+
+  // ── Draw & cull dead orbs ──
+  for(let i=butterflies.length-1;i>=0;i--){
+    const b=butterflies[i];
+    if(b.life<=0){butterflies.splice(i,1);continue;}
+    const lifeOp = b.life > 0.25 ? b.opacity : b.opacity*(b.life/0.25);
+
+    // ── Trail — paint onto both trail and fill canvases ──
+    if(b.trail.length > 1){
+      const px=b.x*W, py=b.y*H;
+      const mc = b.mergeCount||0;
+      const spread = Math.min(1.0 + mc*0.55, 3.2);
+
+      // Trail canvas — crisp luminous dot traces the exact path
+      const dotR = b.size * 0.55 * spread;
+      const tOp = Math.min(b.opacity * 0.62, 0.99);
+      const tOpMid = Math.min(tOp * 0.4, 0.99);
+      const [r1,g1,b1t]=duskRGB(Math.max(0,b.bias-0.2), b.age);
+      const [r2,g2,b2t]=duskRGB(Math.min(1,b.bias+0.2), b.age);
+      const tg2=tg.createRadialGradient(px,py,0,px,py,dotR);
+      tg2.addColorStop(0,   `rgba(${r1},${g1},${b1t},${tOp})`);
+      tg2.addColorStop(0.5, `rgba(${r2},${g2},${b2t},${tOpMid})`);
+      tg2.addColorStop(1,   `rgba(${r2},${g2},${b2t},0)`);
+      tg.beginPath(); tg.arc(px,py,dotR,0,Math.PI*2);
+      tg.fillStyle=tg2; tg.fill();
+
+      // (orb trail dot only — region color handled by Voronoi seeds below)
+    }
+
+    const px=b.x*W, py=b.y*H, sr=b.size;
+    const mc = b.mergeCount||0;
+    // Crisp when virgin — washy and spread when merged many times
+    // spread: 1.0 (tight) → 3.2 (very washy) based on mergeCount
+    const spread = Math.min(1.0 + mc*0.55, 3.2);
+    // Core opacity: bright and defined when unmerged, translucent when merged
+    const coreOp = Math.min(lifeOp * Math.max(0.25, 1.0 - mc*0.18), 0.99);
+    const edgeOp = Math.min(lifeOp * Math.max(0.0,  0.45 - mc*0.08), 0.99);
+    const rad = sr * spread;
+    const og=g.createRadialGradient(px,py,0,px,py,rad);
+    const [r1,g1,b1]=duskRGB(Math.max(0,b.bias-0.2), b.age);
+    const [r2,g2,b2]=duskRGB(Math.min(1,b.bias+0.25), b.age);
+    // Virgin orb: tight bright core, sharp falloff
+    // Merged orb: large diffuse wash, soft centre
+    const midStop = mc===0 ? 0.35 : Math.min(0.55 + mc*0.05, 0.92);
+    og.addColorStop(0,        `rgba(${r1},${g1},${b1},${coreOp})`);
+    og.addColorStop(midStop,  `rgba(${r2},${g2},${b2},${edgeOp})`);
+    og.addColorStop(1,        `rgba(${r2},${g2},${b2},0)`);
+    g.beginPath(); g.arc(px,py,rad,0,Math.PI*2);
+    g.fillStyle=og; g.fill();
+    // Virgin orbs get a tiny bright centre dot for extra crispness
+    if(mc===0){
+      g.beginPath(); g.arc(px,py,Math.max(1.5,sr*0.28),0,Math.PI*2);
+      g.fillStyle=`rgba(${r1},${g1},${b1},${lifeOp*0.7})`;
+      g.fill();
+    }
   }
 }
 draw();
-</script>
 
+</script>
 </body>
 </html>
